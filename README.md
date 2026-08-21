@@ -1,53 +1,39 @@
-# New Project Template
+# Bellmon (Bellarmine Monitor)
 
-This repository contains a template that can be used to seed a repository for a
-new Google open source project.
+**Bellmon (Bellarmine Monitor)** is an automated, event-driven academic and workload monitoring sentinel engineered to ingest student performance data from **Canvas LMS** and **PowerSchool SIS**.
 
-See [go/releasing](http://go/releasing) (available externally at
-https://opensource.google/documentation/reference/releasing) for more information about
-releasing a new Google open source project.
+Built specifically for Bellarmine parents and students, Bellmon delivers proactive, zero-touch early warnings into missing assignments, grade trajectory drops, attendance anomalies, and upcoming workload clusters—while preserving student autonomy through heuristic noise filtering and a 36-hour grace period buffer.
 
-This template uses the Apache license, as is Google's default.  See the
-documentation for instructions on using alternate license.
+---
 
-## How to use this template
+## Key Features & Value Proposition
 
-1. Clone it from GitHub.
-    * There is no reason to fork it.
-1. Create a new local repository and copy the files from this repo into it.
-1. Modify README.md and docs/contributing.md to represent your project, not the
-   template project.
-1. Develop your new project!
+* **Zero-Touch Monitoring:** Push notifications (Pushover / NTFY) and weekly digests replace manual portal logins.
+* **Noise & False-Alarm Suppression:** Cross-references Canvas submission flags against PowerSchool gradebook records to automatically suppress false alerts for paper/in-class assignments.
+* **36-Hour Student Autonomy Grace Period:** Gives students a 36-hour buffer on overdue digital assignments to self-advocate and turn in work before notifying parents.
+* **Proactive Grade Velocity Drop Warnings:** Alerts immediately on rolling 7-day course grade drops ($\ge 4.0\%$) and pinpoints the exact assignment responsible.
+* **Workload Radar:** Identifies heavy 48-hour exam/project clusters in advance for Sunday night weekly planning.
 
-``` shell
-git clone https://github.com/google/new-project
-mkdir my-new-thing
-cd my-new-thing
-git init
-cp -r ../new-project/* ../new-project/.github .
-git add *
-git commit -a -m 'Boilerplate for new Google open source project'
+---
+
+## Documentation Links
+
+* [Product Requirements Document (PRD)](docs/Bellmon_PRD.md) - Full system specification and heuristic business logic matrix.
+* [Critical User Journeys (CUJs)](docs/CUJ.md) - Detailed user personas, triggers, workflows, and outputs across 7 core use cases.
+* [Product Feature Roadmap](docs/Roadmap.md) - Phased deliverable roadmap (MVP, Workload Radar, Attendance Sentinel).
+
+---
+
+## Project Structure
+
 ```
-
-## Source Code Headers
-
-Every file containing source code must include copyright and license
-information. This includes any JS/CSS files that you might be serving out to
-browsers. (This is to help well-intentioned people avoid accidental copying that
-doesn't comply with the license.)
-
-Apache header:
-
-    Copyright 2024 Google LLC
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        https://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+bellmon/
+├── Bellmon_PRD.md             # Master PRD root reference
+├── docs/
+│   ├── Bellmon_PRD.md         # Product Requirements Document
+│   ├── CUJ.md                 # Critical User Journeys
+│   ├── Roadmap.md             # Phased Product Roadmap
+│   ├── code-of-conduct.md
+│   └── contributing.md
+└── README.md
+```

@@ -1,4 +1,4 @@
-# Product Definition: Student Academic & Workload Sentinel
+# Product Definition: Bellarmine Monitor (Bellmon)
 
 ## 1. Executive Summary & Goals
 

@@ -1,4 +1,4 @@
-# Critical User Journeys (CUJs) - Bellmon: Student Academic & Workload Sentinel
+# Critical User Journeys (CUJs) - Bellmon (Bellarmine Monitor)
 
 This document defines the Critical User Journeys (CUJs) for the Bellmon monitoring system, derived directly from the Product Requirements Document (`Bellmon_PRD.md`).
 

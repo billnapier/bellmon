@@ -1,4 +1,4 @@
-# Product Feature Roadmap - Bellmon: Student Academic & Workload Sentinel
+# Product Feature Roadmap - Bellmon (Bellarmine Monitor)
 
 This roadmap outlines the phased deliverable plan for Bellmon features, organized by product maturity and user value.
 
