@@ -9,10 +9,10 @@
 ## Dependency Graph & Execution Order
 
 ```
-Phase 1: Setup (T001 - T003)
+Phase 1: Setup & Configuration (T001 - T003)
        │
        ▼
-Phase 2: Foundational Storage & Models (T004 - T005)
+Phase 2: Firestore State Store & Data Models (T004 - T005)
        │
        ▼
 Phase 3: Harvester Clients [US1] (T006 - T007)
@@ -24,10 +24,10 @@ Phase 4: Missing Work Matrix & 36h Grace [US2] (T008)
 Phase 5: Grade Velocity Drop Evaluator [US3] (T009)
        │
        ▼
-Phase 6: Push Router & Deduplication Ledger [US4] (T010)
+Phase 6: Email Router & Deduplication Ledger [US4] (T010)
        │
        ▼
-Phase 7: CLI Runner & Pipeline Orchestrator [US5] (T011 - T012)
+Phase 7: Cloud Run Containerization & CLI Orchestrator [US5] (T011 - T013)
 ```
 
 ---
@@ -40,9 +40,9 @@ Phase 7: CLI Runner & Pipeline Orchestrator [US5] (T011 - T012)
 
 ---
 
-## Phase 2: Foundational Storage & Data Models
+## Phase 2: Foundational Firestore Storage & Data Models
 
-- [ ] T004 Implement SQLite database schema and connection manager in `bellmon/storage/db.py`
+- [ ] T004 Implement Google Cloud Firestore storage client in `bellmon/storage/firestore.py`
 - [ ] T005 [P] Define unified Pydantic data structures for Courses, Assignments, and Snapshots in `bellmon/engine/models.py`
 
 ---
@@ -66,32 +66,33 @@ Phase 7: CLI Runner & Pipeline Orchestrator [US5] (T011 - T012)
 
 ## Phase 5: User Story 3 - Grade Trajectory Velocity Drop Evaluator [US3]
 
-**Goal**: Monitor rolling 7-day course grade snapshots and trigger warnings on drops $\ge 4.0\%$.
+**Goal**: Monitor rolling 7-day course grade snapshots in Firestore and trigger warnings on drops $\ge 4.0\%$.
 
 - [ ] T009 [US3] Implement 7-day rolling grade velocity drop evaluator and impacting item isolator in `bellmon/engine/trajectory.py`
 
 ---
 
-## Phase 6: User Story 4 - Push Notification Router & Deduplication [US4]
+## Phase 6: User Story 4 - Email Notification Router & Deduplication [US4]
 
-**Goal**: Format P0 notification payloads and dispatch via Pushover / NTFY while enforcing alert deduplication.
+**Goal**: Format HTML & plain-text email payloads and dispatch via SMTP while enforcing alert deduplication in Firestore.
 
-- [ ] T010 [US4] Implement Pushover and NTFY push dispatchers and deduplication ledger in `bellmon/notifications/push.py`
+- [ ] T010 [US4] Implement Email notification dispatcher and deduplication ledger in `bellmon/notifications/email.py`
 
 ---
 
-## Phase 7: User Story 5 - CLI Runner & Pipeline Orchestrator [US5]
+## Phase 7: User Story 5 - Cloud Run Containerization & CLI Orchestrator [US5]
 
-**Goal**: Unify all modules into a single CLI command (`bellmon sync`) for scheduled execution.
+**Goal**: Package application as a Cloud Run Job container and unify pipeline execution under CLI `bellmon sync`.
 
 - [ ] T011 [US5] Implement CLI entry point and pipeline orchestrator in `bellmon/cli.py`
-- [ ] T012 [P] [US5] Create unit test suite for rules engine and state store in `tests/test_engine.py`
+- [ ] T012 [P] [US5] Create Dockerfile for Cloud Run Job deployment in `Dockerfile`
+- [ ] T013 [P] [US5] Create unit test suite for rules engine and storage layer in `tests/test_engine.py`
 
 ---
 
 ## Parallel Execution Opportunities
 
 - **Phase 1**: T003 can be built in parallel with T001/T002.
-- **Phase 2**: T005 (Pydantic models) can be built in parallel with T004 (DB schema).
+- **Phase 2**: T005 (Pydantic models) can be built in parallel with T004 (Firestore layer).
 - **Phase 3**: T006 (Canvas client) and T007 (PowerSchool client) can be implemented completely independently in parallel.
-- **Phase 7**: T012 (Tests) can be executed alongside T011 (CLI wrapper).
+- **Phase 7**: T012 (Dockerfile) and T013 (Tests) can be executed alongside T011 (CLI wrapper).

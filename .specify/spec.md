@@ -67,9 +67,9 @@ Bellmon operates as an unattended background sentinel that ingests data from Can
 - **FR-3.2**: The system MUST compute $\Delta = \text{Grade}_{t-7} - \text{Grade}_{current}$ for every course on each sync run.
 - **FR-3.3**: When $\Delta \ge 4.0\%$, the system MUST isolate the assignment entered within that 7-day interval that caused the largest point deduction.
 
-### FR-4: Push Notification Router & Deduplication Ledger
-- **FR-4.1**: The system MUST format and dispatch alerts to mobile push notification services (Pushover / NTFY).
-- **FR-4.2**: The system MUST maintain an idempotent alert ledger to ensure zero duplicate notifications are sent for the same missing assignment or grade drop event.
+### FR-4: Email Notification Router & Deduplication Ledger
+- **FR-4.1**: The system MUST format and dispatch structured email notifications (HTML & plain text) to registered family email addresses.
+- **FR-4.2**: The system MUST maintain an idempotent alert ledger in Google Cloud Firestore to ensure zero duplicate notifications are sent for the same missing assignment or grade drop event.
 
 ---
 
