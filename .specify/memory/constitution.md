@@ -1,22 +1,21 @@
 <!--
 Sync Impact Report:
-- Version change: 0.0.0 → 1.0.0 (Initial Ratification)
-- List of modified principles: N/A (Initial creation)
+- Version change: 1.0.0 → 1.1.0 (Added Principle 6: IaC & Automated CI/CD Deployment)
+- List of modified principles:
+  - Added Principle 6: Infrastructure as Code & Automated CI/CD Deployment
+  - Updated Governance Section 3: Compliance review to check Principles 1 through 6
 - Added sections:
-  - Principle 1: Student Autonomy & Grace Periods
-  - Principle 2: Cross-System Noise & False-Positive Elimination
-  - Principle 3: Proactive Grade Velocity Drop Tracking
-  - Principle 4: Zero-Touch Push & Digest Delivery
-  - Principle 5: Workload Clumping Radar
-  - Governance & Amendment Procedure
+  - Principle 6: Infrastructure as Code & Automated CI/CD Deployment
+- Removed sections: None
 - Templates requiring updates:
-  - ✅ `.specify/memory/constitution.md` initialized
+  - ✅ `.specify/memory/constitution.md` updated
+  - ✅ `.specify/templates/plan-template.md` (Constitution Check aligns with 6 principles)
 - Follow-up TODOs: None
 -->
 
 # Bellmon (Bellarmine Monitor) Project Constitution
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Ratification Date:** 2026-08-20  
 **Last Amended Date:** 2026-08-20  
 
@@ -45,6 +44,9 @@ The system MUST operate unattended without requiring parents or students to manu
 ### Principle 5: Workload Clumping Radar
 The system MUST analyze forward-looking 7-day schedules to identify workload clumping—defined as $\ge 2$ major assessments (Exams, Projects, Midterms, or points $\ge 50$) due within any rolling 48-hour window—and prominently highlight these clusters in the Sunday digest.
 
+### Principle 6: Infrastructure as Code & Automated CI/CD Deployment
+All infrastructure resources MUST be provisioned and managed as code using Terraform. Deployment and environment updates MUST be executed via GitHub Actions CI/CD workflows utilizing Guardian (https://github.com/abcxyz/guardian) for secure, policy-enforced Terraform plan and apply execution.
+
 ---
 
 ## Governance & Amendment Procedure
@@ -56,4 +58,4 @@ The system MUST analyze forward-looking 7-day schedules to identify workload clu
      - **MAJOR**: Backward-incompatible principle removals or redefinitions.
      - **MINOR**: Addition of new principles or major expansion of governance scope.
      - **PATCH**: Typos, wording clarifications, or non-semantic refinements.
-3. **Compliance Review**: All implementation plans (`plan.md`) MUST include an explicit "Constitution Check" section verifying alignment with Principles 1 through 5.
+3. **Compliance Review**: All implementation plans (`plan.md`) MUST include an explicit "Constitution Check" section verifying alignment with Principles 1 through 6.

@@ -1,0 +1,28 @@
+name: Guardian Terraform Apply
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'terraform/**'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      - name: Guardian Apply Execution
+        uses: abcxyz/guardian/actions/terraform-apply@v0.1.0
+        with:
+          directory: terraform

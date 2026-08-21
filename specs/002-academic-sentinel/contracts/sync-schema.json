@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SentinelSyncRun",
+  "type": "object",
+  "properties": {
+    "student_id": { "type": "string" },
+    "synced_at": { "type": "string", "format": "date-time" },
+    "courses_processed": { "type": "integer" },
+    "missing_assignments_evaluated": { "type": "integer" },
+    "alerts_dispatched": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "alert_type": { "type": "string", "enum": ["MISSING_WORK", "GRADE_DROP", "ATTENDANCE_ANOMALY", "SUNDAY_DIGEST"] },
+          "priority": { "type": "string", "enum": ["P0", "P1"] },
+          "recipient": { "type": "string" },
+          "dispatched_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["alert_type", "priority", "dispatched_at"]
+      }
+    }
+  },
+  "required": ["student_id", "synced_at", "courses_processed", "missing_assignments_evaluated"]
+}
