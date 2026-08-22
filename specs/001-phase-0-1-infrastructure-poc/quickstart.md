@@ -4,54 +4,70 @@
 
 ---
 
-## 1. Required GitHub Repository Secrets
+## 1. Zero-Edit GCP & GitHub Workload Identity Setup Script
 
-Per Constitution Principle 4, configure the following secrets in GitHub (**Settings > Secrets and variables > Actions**):
-
-| Secret Name | Description | Example / Value Format |
-| :--- | :--- | :--- |
-| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Full resource name of Workload Identity Provider | `projects/123456789/locations/global/workloadIdentityPools/pool/providers/provider` |
-| `GCP_SERVICE_ACCOUNT` | Service Account email for Guardian | `bellmon-sentinel-runner@bellmon-prod.iam.gserviceaccount.com` |
-
----
-
-## 2. Local Workstation Setup
-
-1. **Install Python Dependencies**:
-   ```bash
-   pip install -e .
-   ```
-
-2. **Authenticate with GCP**:
-   ```bash
-   gcloud auth application-default login
-   ```
-
----
-
-## 3. Terraform Infrastructure Validation
-
-Validate HCL syntax and formatting locally before pushing:
+Per Constitution v1.2.1, copy and paste this complete script directly into your terminal. It dynamically derives your GCP project number and outputs the exact secret value for GitHub:
 
 ```bash
+# Set active GCP Project ID
+export GCP_PROJECT_ID="bellmon-prod"
+gcloud config set project "$GCP_PROJECT_ID"
+
+# Dynamically resolve GCP Project Number
+export GCP_PROJECT_NUMBER=$(gcloud projects describe "$GCP_PROJECT_ID" --format="value(projectNumber)")
+echo "Selected Project: $GCP_PROJECT_ID (Number: $GCP_PROJECT_NUMBER)"
+
+# Enable required GCP APIs
+gcloud services enable iamcredentials.googleapis.com cloudresourcemanager.googleapis.com
+
+# Create Workload Identity Pool
+gcloud iam workload-identity-pools create "github-pool" \
+  --location="global" \
+  --display-name="GitHub Actions Pool"
+
+# Create Workload Identity Provider
+gcloud iam workload-identity-pools providers create-oidc "github-provider" \
+  --location="global" \
+  --workload-identity-pool="github-pool" \
+  --display-name="GitHub Actions Provider" \
+  --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository" \
+  --issuer-uri="https://token.actions.githubusercontent.com"
+
+# Bind Service Account to GitHub Repository
+gcloud iam service-accounts add-iam-policy-binding "bellmon-sentinel-runner@${GCP_PROJECT_ID}.iam.gserviceaccount.com" \
+  --role="roles/iam.workloadIdentityUser" \
+  --member="principalSet://iam.googleapis.com/projects/${GCP_PROJECT_NUMBER}/locations/global/workload-identity-pools/github-pool/attribute.repository/billnapier/bellmon"
+
+echo ""
+echo "=== COPY THIS VALUE FOR GCP_WORKLOAD_IDENTITY_PROVIDER IN GITHUB ==="
+gcloud iam workload-identity-pools providers describe "github-provider" \
+  --location="global" \
+  --workload-identity-pool="github-pool" \
+  --format="value(name)"
+```
+
+---
+
+## 2. GitHub Secrets Setup
+
+Add the 2 secrets in GitHub (**Settings > Secrets and variables > Actions**):
+
+| Secret Name | Value |
+| :--- | :--- |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Output string printed by the script above |
+| `GCP_SERVICE_ACCOUNT` | `bellmon-sentinel-runner@bellmon-prod.iam.gserviceaccount.com` |
+
+---
+
+## 3. Local Workstation Validation
+
+```bash
+# Python unit tests
+pytest tests/test_sanity.py
+
+# Terraform HCL format & validation
 cd terraform
 terraform init -backend=false
 terraform fmt -check
 terraform validate
 ```
-
----
-
-## 4. Guardian CI/CD Verification
-
-1. **Commit and Push Changes**:
-   ```bash
-   git add .
-   git commit -m "feat(infra): apply constitution v1.2.0 secret contract"
-   git push origin 001-phase-0-1-infrastructure-poc
-   ```
-
-2. **Open Pull Request**:
-   * Creating a PR triggers `.github/workflows/guardian.yml`.
-   * Review the speculative `guardian plan` diff comment on your PR.
-   * Merge to `main` to execute `guardian apply` directly into production.
