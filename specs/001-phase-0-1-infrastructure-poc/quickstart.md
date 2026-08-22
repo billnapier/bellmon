@@ -4,16 +4,18 @@
 
 ---
 
-## 1. Local Prerequisites
+## 1. Required GitHub Repository Secrets
 
-Ensure the following tools are installed on your workstation:
-* **Python 3.11+**: `python3 --version`
-* **Terraform 1.5+**: `terraform --version`
-* **Google Cloud SDK (`gcloud`)**: `gcloud --version`
+Per Constitution Principle 4, configure the following secrets in GitHub (**Settings > Secrets and variables > Actions**):
+
+| Secret Name | Description | Example / Value Format |
+| :--- | :--- | :--- |
+| `GCP_WORKLOAD_IDENTITY_PROVIDER` | Full resource name of Workload Identity Provider | `projects/123456789/locations/global/workloadIdentityPools/pool/providers/provider` |
+| `GCP_SERVICE_ACCOUNT` | Service Account email for Guardian | `bellmon-sentinel-runner@bellmon-prod.iam.gserviceaccount.com` |
 
 ---
 
-## 2. Environment Setup
+## 2. Local Workstation Setup
 
 1. **Install Python Dependencies**:
    ```bash
@@ -45,7 +47,7 @@ terraform validate
 1. **Commit and Push Changes**:
    ```bash
    git add .
-   git commit -m "feat(infra): add baseline terraform and guardian workflow"
+   git commit -m "feat(infra): apply constitution v1.2.0 secret contract"
    git push origin 001-phase-0-1-infrastructure-poc
    ```
 

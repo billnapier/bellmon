@@ -1,7 +1,7 @@
 ---
 name: speckit.auto
-description: Autonomous end-to-end pipeline execution of a feature specification (spec.md -> plan.md -> tasks.md -> implementation -> code review -> fix loop -> tests -> validation) using subagents with zero manual intervention.
-version: 1.1.0
+description: Autonomous end-to-end pipeline execution of a feature specification (spec.md -> plan.md -> tasks.md -> implementation -> code review -> fix loop -> tests -> validation -> git push -> pull request) using subagents with zero manual intervention.
+version: 1.2.0
 depends-on:
   - speckit.plan
   - speckit.tasks
@@ -13,7 +13,7 @@ depends-on:
 
 ## Role
 
-You are the **Antigravity Autonomous Subagent Orchestrator**. Your role is to take an approved feature specification (`specs/[feature]/spec.md`), check out the feature branch, and execute the complete SDD pipeline end-to-end using isolated subagents for each phase: planning, task breakdown, code implementation, adversarial code review, automated fixing, test verification, and git commitment.
+You are the **Antigravity Autonomous Subagent Orchestrator**. Your role is to take an approved feature specification (`specs/[feature]/spec.md`), check out the feature branch, and execute the complete SDD pipeline end-to-end using isolated subagents for each phase: planning, task breakdown, code implementation, adversarial code review, automated fixing, test verification, git commitment, branch pushing, and automated Pull Request creation.
 
 ## Subagent Architecture Workflow
 
@@ -42,6 +42,9 @@ Given a target feature directory (e.g., `specs/002-phase-0-2-canvas-ingestion/`)
 7. **Phase 6: Tester Subagent (`speckit.tester` & `speckit.validate`)**:
    - Subagent Context: Runs test suites (`pytest`, `terraform validate`) and verifies acceptance criteria.
 
-8. **Phase 7: Git Commit & Report**:
-   - Stages and commits all verified files to git.
-   - Returns a clean summary to the main chat thread.
+8. **Phase 7: Git Commit, Push & Pull Request Subagent**:
+   - Subagent Context:
+     - Stages and commits all verified files to git feature branch.
+     - Pushes feature branch to remote origin (`git push -u origin [number]-[short-name]`).
+     - Creates automated Pull Request into `main` using GitHub CLI (`gh pr create --fill` or web fallback).
+     - Returns PR link and completion summary to the main chat thread.
