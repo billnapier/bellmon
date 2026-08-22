@@ -58,6 +58,10 @@ This document formalizes the technical architecture, technology stack, and compo
 | **State Storage** | Google Cloud Firestore | Serverless document database storing student state snapshots, assignment ledgers, and notification history. |
 | **Notification Engine** | SendGrid Web API | Delivers responsive HTML emails for both P0 urgent alerts and P1 Sunday planning digests. |
 | **Secrets Management** | GCP Secret Manager | Securely stores Canvas API tokens, SendGrid API keys, and PowerSchool SSO credentials. |
+| **Infrastructure Config (IaC)** | Terraform | Declarative HCL definitions (`terraform/`) managing Cloud Run, Cloud Scheduler, Firestore, Secrets, and IAM. |
+| **CI/CD Actuation** | abcxyz/guardian | Google's Guardian GitHub Action workflow (`github.com/abcxyz/guardian`) executing automated Terraform plans and applies. |
+| **Environment Strategy** | Direct Production ("Test in Prod") | Single production environment deployment model. No separate staging environment overhead. |
+
 
 ---
 
@@ -128,3 +132,27 @@ Firestore maintains a single primary document per monitored student: `students/{
 4. **Grade Velocity Drop:** Triggers P0 alert if rolling 7-day course grade drops by $\Delta \ge 4.0\%$, highlighting the specific assignment causing max point loss.
 5. **Attendance Anomaly:** Triggers P0 alert for period codes $\in \{\text{'A'}, \text{'T'}, \text{'U'}, \text{'CUT'}\}$.
 6. **Workload Clumping:** Flags Sunday digest banner if $\ge 2$ major assessments (tests, exams, projects or $\ge 50$ pts) fall within any 48-hour window over the next 7 days.
+
+---
+
+## 6. Infrastructure Actuation & Deployment Policy
+
+### 6.1 Terraform Infrastructure Configuration
+All GCP resources are managed declaratively in the `terraform/` directory:
+* `main.tf` / `variables.tf`: GCP provider configuration and project variables.
+* `cloud_run.tf`: Cloud Run Job definition (container specification, memory/CPU allocation, environment variables).
+* `scheduler.tf`: Cloud Scheduler HTTP trigger schedules (5:00 PM weekdays, 6:00 PM Sunday).
+* `secrets.tf`: Secret Manager secret declarations for Canvas Token, PowerSchool SSO credentials, and SendGrid API Key.
+* `iam.tf`: Service account definitions and IAM role bindings.
+
+### 6.2 CI/CD Actuation via Guardian (`abcxyz/guardian`)
+Infrastructure changes are automated using Google's **Guardian** (`github.com/abcxyz/guardian`):
+* **Pull Request Workflow (`guardian plan`):** Executes `terraform plan` on incoming PRs and posts formatted speculative diffs back to the PR comments.
+* **Merge Workflow (`guardian apply`):** Executes `terraform apply` upon merge to `main`, updating production infrastructure automatically.
+
+### 6.3 Deployment Model ("Test in Prod")
+Bellmon strictly adheres to a **single production environment** deployment model:
+* No staging environment overhead.
+* Automated tests run locally and in GitHub Actions before merge.
+* Infrastructure changes deploy directly to production GCP resources via Guardian.
+
