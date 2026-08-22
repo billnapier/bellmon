@@ -58,7 +58,8 @@ This document formalizes the technical architecture, technology stack, and compo
 | **State Storage** | Google Cloud Firestore | Serverless document database storing student state snapshots, assignment ledgers, and notification history. |
 | **Notification Engine** | SendGrid Web API | Delivers responsive HTML emails for both P0 urgent alerts and P1 Sunday planning digests. |
 | **Secrets Management** | GCP Secret Manager | Securely stores Canvas API tokens, SendGrid API keys, and PowerSchool SSO credentials. |
-| **Infrastructure Config (IaC)** | Terraform | Declarative HCL definitions (`terraform/`) managing Cloud Run, Cloud Scheduler, Firestore, Secrets, and IAM. |
+| **System Monitoring** | GCP Cloud Monitoring | Configures log-based alert policies and Cloud Run job execution failure alerts via Terraform (`terraform/monitoring.tf`) to notify admins if scraping fails without bloating app code. |
+| **Infrastructure Config (IaC)** | Terraform | Declarative HCL definitions (`terraform/`) managing Cloud Run, Cloud Scheduler, Firestore, Monitoring, Secrets, and IAM. |
 | **CI/CD Actuation** | abcxyz/guardian | Google's Guardian GitHub Action workflow (`github.com/abcxyz/guardian`) executing automated Terraform plans and applies. |
 | **Environment Strategy** | Direct Production ("Test in Prod") | Single production environment deployment model. No separate staging environment overhead. |
 
@@ -126,11 +127,11 @@ Firestore maintains a single primary document per monitored student: `students/{
 
 ## 5. Alert Heuristics & Business Rules
 
-1. **Digital Missing Work Grace Period:** Digital Canvas assignments (`online_upload`) trigger a 36-hour delay window (`GRACE_PERIOD`) before dispatching a parent email, allowing student self-correction.
-2. **Confirmed Missing Work:** Bypasses grace period if PowerSchool confirms `isMissing: true` or `score: 0`.
-3. **Paper Work Suppression:** If Canvas reports missing but PowerSchool shows `score > 0` or `isCollected: true`, alert is suppressed (`SUPPRESSED`).
-4. **Grade Velocity Drop:** Triggers P0 alert if rolling 7-day course grade drops by $\Delta \ge 4.0\%$, highlighting the specific assignment causing max point loss.
-5. **Attendance Anomaly:** Triggers P0 alert for period codes $\in \{\text{'A'}, \text{'T'}, \text{'U'}, \text{'CUT'}\}$.
+1. **Digital Missing Work Grace Period:** Digital Canvas assignments (`online_upload`) trigger a 36 school-day hour delay window (`GRACE_PERIOD`) that pauses on weekends and holidays before dispatching a parent email, allowing student self-correction.
+2. **Confirmed PowerSchool Missing Work:** Bypasses grace period if PowerSchool confirms `isMissing: true` or `score: 0` (PowerSchool is official system of record).
+3. **Paper Work Handling:** Canvas `missing: true` status for non-digital items (`on_paper`, `none`) is suppressed, deferring entirely to PowerSchool gradebook updates.
+4. **Grade Velocity Drop:** Triggers P0 alert if rolling 7-day course grade drops by $\Delta \ge 4.0\%$, provided course has $\ge 100$ graded points OR term length $\ge 21$ days (suppresses early-term noise). Highlights assignment causing max point loss.
+5. **Attendance Anomaly:** Triggers P0 Push Alert daily at 4:00 PM strictly for unexcused absences (`A`) or class cuts (`CUT`). Minor tardies (`T`) and unverified entries (`U`) are batched into the Sunday P1 email digest.
 6. **Workload Clumping:** Flags Sunday digest banner if $\ge 2$ major assessments (tests, exams, projects or $\ge 50$ pts) fall within any 48-hour window over the next 7 days.
 
 ---

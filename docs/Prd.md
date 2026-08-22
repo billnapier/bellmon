@@ -94,42 +94,48 @@ PowerSchool serves as the official district gradebook of record and master atten
 
 ## 4. Heuristic & Business Logic Engine
 
-### 4.1 Cross-System Missing Work Resolution Matrix
-To prevent false alarms arising from physical paper submissions or delayed teacher data entry, the rules engine cross-evaluates Canvas and PowerSchool states before dispatching alerts.
+### 4.1 Decoupled Ingestion & Missing Work Resolution Logic
+To avoid brittle cross-system title matching while minimizing false alarms, Bellmon uses an **Asymmetric System Authority Model** with a **School-Day Grace Period Timer**.
 
-```
-IF Canvas.missing == True:
-    IF Canvas.submission_types CONTAINS "on_paper" OR "none":
-        DEFER to PowerSchool.isMissing
-    ELSE IF PowerSchool.isCollected == True OR PowerSchool.score > 0:
-        SUPPRESS (Turned in on paper / manually recorded)
-    ELSE IF PowerSchool.isMissing == True OR PowerSchool.score == 0:
-        EMIT Alert(P0, "Confirmed Missing Assignment")
-    ELSE:
-        APPLY GracePeriod(36 Hours)
-        IF Still Unsubmitted after GracePeriod:
-            EMIT Alert(P0, "Missing Digital Assignment (Post-Grace)")
-```
+#### System Authority Roles:
+* **Canvas LMS Authority:** Sole authority for digital submissions (`submission_types: ['online_upload']`). If Canvas reports `missing: true`, a 36 school-day hour grace period is initiated.
+* **PowerSchool SIS Authority:** Sole authority for official teacher gradebook records, physical paper hand-ins, and attendance. If PowerSchool flags `isMissing: true` or `score: 0`, an immediate alert is triggered.
 
-#### Detailed Case Resolution Table
+#### School-Day Grace Period Definition (36 Business Hours):
+* The 36-hour grace period timer runs **only during school/business hours** (Monday–Friday, 8:00 AM – 5:00 PM).
+* **Weekend Pause:** The timer automatically pauses on Friday at 5:00 PM and resumes Monday at 8:00 AM (skipping weekends and official school holidays).
+* *Example:* An assignment due Friday at 11:59 PM initiates the timer on Monday at 8:00 AM. It will not trigger a notification until Tuesday at 5:00 PM (36 school-day hours elapsed), giving students and teachers ample time for post-weekend submission and grading.
 
-| Canvas Status | PowerSchool Status | Reality / Root Cause | Engine Action |
+#### Missing Work Resolution Matrix
+
+| Ingestion Source | Observed System Flag | Reality / Root Cause | Engine Action |
 | :--- | :--- | :--- | :--- |
-| `missing: true` | Score $> 0$ or `Collected: true` | Physical worksheet handed in; teacher graded or checked in | **Suppress alert** (False positive eliminated). |
-| `missing: true` | Blank score (`-`), no missing flag | Turned in on paper or in-progress teacher grading | **Apply 36h Grace Period** before evaluating again. |
-| `missing: true` | `score: 0` or `isMissing: true` | Teacher explicitly confirmed work was not received | **Fire P0 Push Alert** immediately. |
-| `missing: false` | `isMissing: true` or `score: 0` | In-class task / paper exam not tracked in Canvas | **Fire P0 Push Alert** immediately. |
+| **Canvas LMS** | `missing: true` (`online_upload`) | Unsubmitted digital work or pending teacher update | **Initiate 36 School-Day Hour Grace Period**. Pause timer on weekends. |
+| **PowerSchool SIS** | `isMissing: true` or `score: 0` | Teacher explicitly recorded missing work in SIS | **Fire P0 Push Alert** immediately during daily sync. |
+| **Canvas LMS** | `missing: true` (`on_paper` / `none`) | Physical assignment not submitted via Canvas | **Suppress Canvas alert**. Rely solely on PowerSchool SIS gradebook. |
+
 
 ### 4.2 Grade Trajectory & Velocity Drop Detection
+To eliminate false alarms caused by early-term grade volatility (low total point denominators), velocity drops are evaluated with a minimum denominator threshold.
+
 * **Mathematical Trigger:**
   $$\Delta = \text{Grade}_{t-\text{prev}} - \text{Grade}_{t-\text{curr}} \ge 4.0\%$$
   Evaluated over a rolling 7-day window per course.
+* **Minimum Point / Term Threshold (Noise Suppressor):**
+  * Velocity drop evaluation is **suppressed** unless the course has **$\ge 100$ total graded points** OR the current term has been active for **$\ge 21$ calendar days** (3 weeks).
+  * Prevents 1-point early-term quizzes from triggering false P0 alerts.
 * **Payload Isolation:** The engine correlates the delta with the specific assignment ID or zero entered within that interval and includes the assignment title and point loss in the alert body.
 
 ### 4.3 Attendance Anomaly Processing
-* **Trigger Conditions:** Period attendance code $\in \{\text{'A' (Unexcused Absence)}, \text{'T' (Tardy)}, \text{'U' (Unverified)}, \text{'CUT'}\}$.
+Attendance anomalies are evaluated using a **Tiered Severity Model** to prevent alert fatigue from minor tardies or roll-call data entry lag.
+
+* **P0 High-Priority Trigger (Immediate Push Alert):**
+  * Period codes $\in \{\text{'A' (Unexcused Absence)}, \text{'CUT' (Class Cut)}\}$.
+  * Dispatched daily at 4:00 PM to alert parents on the day of the unexcused absence.
+* **P1 Digest Trigger (Sunday Email Digest):**
+  * Period codes $\in \{\text{'T' (Tardy)}, \text{'U' (Unverified)}\}$.
+  * Batched into the Sunday Planning Digest to inform parents without interrupting their work day over a minor tardy.
 * **Suppression Conditions:** Standard present or authorized excused codes ($\{\text{'P' (Present)}, \text{'E' (Excused)}, \text{'EX'}, \text{'ACT' (School Activity)}\}$) are ignored.
-* **Dispatch:** Immediate P0 push alert including the class period, course title, and timestamp.
 
 ### 4.4 Forward-Looking Workload Clumping (Exam / Project Radar)
 * **Trigger Conditions:** $\ge 2$ major assessments (defined as category matching `['Exam', 'Test', 'Project', 'Midterm']` or `points_possible >= 50`) due within a rolling 48-hour window over the next 7 days.
@@ -139,12 +145,14 @@ IF Canvas.missing == True:
 
 ## 5. Notification & Delivery Matrix
 
-| Alert Type | Priority | Target Channel | Dispatch Schedule | Payload Contents |
-| :--- | :--- | :--- | :--- | :--- |
-| **Confirmed Missing Work** | P0 | Push (Pushover / NTFY) | Daily at 5:00 PM | Course, Assignment Name, Due Date, Points Possible, System Source |
-| **Grade Drop ($\ge 4\%$)** | P0 | Push (Pushover / NTFY) | Daily at 5:00 PM | Course, Old Grade $\to$ New Grade, Impacting Assignment Name & Score |
-| **Attendance Anomaly** | P0 | Push (Pushover / NTFY) | Real-time / Daily at 4:00 PM | Period Number, Course Name, Teacher, Attendance Code |
-| **Weekly Planning Digest** | P1 | Email (HTML) | Sunday at 6:00 PM | Full Course Grade Summary, Upcoming 7-day Deadlines, Workload Clumping Warnings |
+> **v1 Channel Strategy:** All v1 notifications are delivered strictly via **Email** to the registered Parent/Guardian address. Additional alerting channels (e.g., Pushover, NTFY push notifications, SMS) are deferred to future roadmap iterations.
+
+| Alert Type | Priority | Target Audience | Target Channel (v1) | Dispatch Schedule | Payload Contents |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Confirmed Missing Work** | P0 | Parent / Guardian | Email (SendGrid / SMTP) | Daily at 5:00 PM | Course, Assignment Name, Due Date, Points Possible, System Source |
+| **Grade Drop ($\ge 4\%$)** | P0 | Parent / Guardian | Email (SendGrid / SMTP) | Daily at 5:00 PM | Course, Old Grade $\to$ New Grade, Impacting Assignment Name & Score |
+| **Unexcused Absence / Cut** | P0 | Parent / Guardian | Email (SendGrid / SMTP) | Daily at 4:00 PM | Period Number, Course Name, Teacher, Attendance Code (`A` / `CUT`) |
+| **Weekly Planning Digest** | P1 | Parent / Guardian | Email (HTML Digest) | Sunday at 6:00 PM | Full Grade Summary, 7-day Deadlines, Workload Clumping, Weekly Tardy/Unverified Summary |
 
 ---
 
@@ -207,8 +215,8 @@ The engine maintains a lightweight state cache (e.g., Firestore document or loca
 ### 7.1 Recommended Stack
 * **Runtime:** Python 3.11+ / Serverless (Google Cloud Run / AWS Lambda / Local Cron)
 * **Storage:** Google Cloud Firestore, SQLite, or local JSON state store
-* **Push Notifications:** Pushover API or self-hosted NTFY instance
-* **Email Delivery:** SendGrid, AWS SES, or SMTP for the Sunday HTML digest
+* **Notifications (v1):** Email Delivery via SendGrid, AWS SES, or SMTP (delivers both P0 urgent alert emails and P1 Sunday HTML digests). Mobile push (Pushover/NTFY) deferred to future iterations.
+* **Monitoring & Failure Alerting:** GCP Cloud Monitoring (`terraform/monitoring.tf`) log-based alert policy for Cloud Run job failures (eliminates custom app heartbeat overhead)
 
 ### 7.2 Implementation Phases
 1. **Phase 1: API Harvesters & Authentication**
