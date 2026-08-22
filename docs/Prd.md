@@ -209,28 +209,18 @@ The engine uses **Google Cloud Firestore** to maintain persistent state snapshot
 
 ### 7.2 Implementation Phases
 1. **Phase 0: Infrastructure & Ingestion Proof of Concept**
-   * Terraform setup (`terraform/`) for Cloud Run Job, Secret Manager, Firestore, and Guardian CI/CD.
+   * Terraform setup (`terraform/`) for Cloud Run Job, Cloud Scheduler (sub-daily trigger), Secret Manager, Firestore, and Guardian CI/CD.
    * Playwright setup for PowerSchool cookie reuse & SAML SSO login.
-   * Exit requirement: Cloud Run Job execution logging live student snapshot data from both Canvas and PowerSchool.
-2. **Phase 1: MVP Academic Sentinel**
+   * Mandatory Exit Requirement: Cloud Run Job execution logging live student snapshot data from both Canvas and PowerSchool.
+2. **Phase 1: MVP Core Academic & Attendance Sentinel**
    * Firestore state persistence engine.
-   * Asymmetric System Authority Model rules (36h grace period pausing weekends, PowerSchool immediate missing alerts, grade velocity drop checks).
-   * SendGrid HTML email notification router (5:00 PM weekday P0 alerts).
+   * Asymmetric System Authority Model rules (36h grace period evaluated via sub-daily job execution, pausing weekends; PowerSchool immediate missing alerts; silent warming grade velocity drop checks).
+   * Attendance Anomaly Sentinel (P0 alerts for unexcused absences `A` and class cuts `CUT`).
+   * SendGrid HTML email notification router.
 3. **Phase 2: Workload Radar & Sunday Digest**
    * Workload clumping evaluator ($\ge 2$ major assessments within 48h window).
-   * Sunday 6:00 PM HTML email digest.
-nitoring.tf`) log-based alert policy for Cloud Run job failures (eliminates custom app heartbeat overhead)
+   * Sunday 6:00 PM HTML email digest (grades, upcoming timeline, workload clumping, and weekly tardy summary).
+4. **Phase 3: Customization & Multi-Student Oversight**
+   * Custom notification thresholds and grace periods per observee.
+   * Unified multi-student monitoring feed.
 
-### 7.2 Implementation Phases
-1. **Phase 1: API Harvesters & Authentication**
-   * Implement Canvas REST client with Observer Personal Access Token.
-   * Implement PowerSchool client handling session login and cookie persistence.
-   * Verify rate limits and error-handling backoff strategies.
-2. **Phase 2: Entity Matching & State Diffing Engine**
-   * Build title-normalization and due-date matching logic across Canvas and PowerSchool.
-   * Implement the state store schema to track 14-day snapshots.
-   * Build and unit-test the cross-system missing work resolution logic and grace period delays.
-3. **Phase 3: Dispatchers & Automation**
-   * Implement Pushover / NTFY webhook triggers for P0 alerts.
-   * Design and implement the Sunday HTML email template generator.
-   * Deploy the service on a daily scheduled cron (5:00 PM weekdays, 6:00 PM Sunday).
