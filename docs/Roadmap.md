@@ -2,6 +2,20 @@
 
 This roadmap outlines the phased deliverable plan for Bellmon features, organized by product maturity and user value.
 
+## Phase 0: Infrastructure Setup & End-to-End Proof of Concept
+
+Focus: Establish the foundational cloud infrastructure, automated CI/CD pipeline, container runtime, and dual-system data harvesting.
+
+### Key Output
+* **Cloud Run Verification Page:** A deployed GCP Cloud Run web service presenting a simple status page that fetches and displays live data from both **Canvas** (e.g. observee course/assignment) and **PowerSchool** (e.g. course title or grade/attendance snapshot).
+* **Foundational Infrastructure:**
+  * Declarative Terraform IaC setup (`terraform/`) for Cloud Run, Secret Manager, Firestore, and IAM permissions.
+  * `abcxyz/guardian` GitHub Actions workflow for automated Terraform actuation (`guardian plan` on PR, `guardian apply` on merge to `main`).
+  * Playwright headless browser setup for PowerSchool SAML SSO authentication.
+  * Direct Production ("Test in Prod") deployment pipeline.
+
+*(Note: Phase 0 does not implement end-user CUJs or alert heuristics, but validates the core connectivity, authentication, and execution layer upon which all sentinel logic is built).*
+
 ---
 
 ## Phase 1: MVP - Noise Reduction & Core Academic Sentinel
