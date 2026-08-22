@@ -1,0 +1,81 @@
+name: Guardian Terraform CI/CD
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'terraform/**'
+  push:
+    branches: [ main ]
+    paths:
+      - 'terraform/**'
+
+jobs:
+  guardian-plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Install Guardian CLI
+        run: |
+          curl -sSL -o guardian.tar.gz https://github.com/abcxyz/guardian/releases/download/v3.2.5/guardian_3.2.5_linux_amd64.tar.gz
+          tar -xzf guardian.tar.gz
+          sudo mv guardian /usr/local/bin/guardian
+          guardian --version
+
+      - name: Guardian Plan
+        env:
+          GUARDIAN_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          guardian plan -child-setup-dir=terraform
+
+  guardian-apply:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Install Guardian CLI
+        run: |
+          curl -sSL -o guardian.tar.gz https://github.com/abcxyz/guardian/releases/download/v3.2.5/guardian_3.2.5_linux_amd64.tar.gz
+          tar -xzf guardian.tar.gz
+          sudo mv guardian /usr/local/bin/guardian
+          guardian --version
+
+      - name: Guardian Apply
+        env:
+          GUARDIAN_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          guardian apply -child-setup-dir=terraform
