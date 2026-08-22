@@ -1,6 +1,6 @@
 # Technical Architecture & System Design - Bellmon (Bellarmine Monitor)
 
-This document formalizes the technical architecture, technology stack, and component interactions for **Bellmon (Bellarmine Monitor)**, derived from requirements in `Bellmon_PRD.md` and ratified decisions.
+This document formalizes the technical architecture, technology stack, and component interactions for **Bellmon (Bellarmine Monitor)**, derived from ratified technical decisions.
 
 ---
 
@@ -40,7 +40,7 @@ This document formalizes the technical architecture, technology stack, and compo
       │ Google Cloud Firestore  │
       │ - Grade Snapshots (14d) │
       │ - Assignment Ledger     │
-      │ - Dispatch Idempotency  │
+      │ - Session Cookie Store  │
       └─────────────────────────┘
 ```
 
@@ -50,15 +50,15 @@ This document formalizes the technical architecture, technology stack, and compo
 
 | Layer / Subsystem | Technology Choice | Details & Rationale |
 | :--- | :--- | :--- |
-| **Language & Runtime** | Python 3.11+ | High ecosystem support for web automation, HTML parsing, and cloud SDKs. |
+| **Language & Runtime** | Python 3.11+ | High ecosystem support for web automation, HTML parsing, and GCP SDKs. |
 | **Canvas Ingestion** | Canvas REST API | Connects via Personal Access Token (`/api/v1/users/:observee_id/missing_submissions`, `/api/v1/courses/:course_id/assignments`). |
-| **PowerSchool Ingestion** | Playwright (Python) | Headless browser automation handling SAML SSO login (`powerschool.bcp.org`), session persistence, and gradebook/attendance scraping. |
+| **PowerSchool Ingestion** | Playwright (Python) | Headless browser automation handling SAML SSO login (`powerschool.bcp.org`). Reuses session cookies stored in Firestore first, falling back to credentials if expired. |
 | **Execution Platform** | GCP Cloud Run Jobs | Containerized execution environment running on demand; 100% serverless and zero-cost within GCP free tier. |
 | **Job Scheduling** | GCP Cloud Scheduler | Cron-based HTTP triggers calling Cloud Run jobs daily (5:00 PM weekdays for P0 alerts; 6:00 PM Sunday for P1 digests). |
-| **State Storage** | Google Cloud Firestore | Serverless document database storing student state snapshots, assignment ledgers, and notification history. |
-| **Notification Engine** | SendGrid Web API | Delivers responsive HTML emails for both P0 urgent alerts and P1 Sunday planning digests. |
+| **State Storage** | Google Cloud Firestore | Serverless document database (`students/{student_id}`) storing snapshots, session cookies, assignment ledgers, and notification history. |
+| **Notification Engine** | SendGrid Web API | Delivers responsive HTML emails for both P0 urgent alerts and P1 Sunday planning digests (v1 MVP channel standard). |
 | **Secrets Management** | GCP Secret Manager | Securely stores Canvas API tokens, SendGrid API keys, and PowerSchool SSO credentials. |
-| **System Monitoring** | GCP Cloud Monitoring | Configures log-based alert policies and Cloud Run job execution failure alerts via Terraform (`terraform/monitoring.tf`) to notify admins if scraping fails without bloating app code. |
+| **System Monitoring** | GCP Cloud Monitoring | Configures log-based alert policies and Cloud Run job execution failure alerts via Terraform (`terraform/monitoring.tf`) to notify admins if scraping fails. |
 | **Infrastructure Config (IaC)** | Terraform | Declarative HCL definitions (`terraform/`) managing Cloud Run, Cloud Scheduler, Firestore, Monitoring, Secrets, and IAM. |
 | **CI/CD Actuation** | abcxyz/guardian | Google's Guardian GitHub Action workflow (`github.com/abcxyz/guardian`) executing automated Terraform plans and applies. |
 | **Environment Strategy** | Direct Production ("Test in Prod") | Single production environment deployment model. No separate staging environment overhead. |
@@ -66,7 +66,7 @@ This document formalizes the technical architecture, technology stack, and compo
 
 ---
 
-## 3. Data Ingestion & Ingestion Strategy
+## 3. Data Ingestion & Integration Strategy
 
 ### 3.1 Canvas LMS Ingestion
 * **Endpoint:** `GET /api/v1/users/:observee_id/missing_submissions` & `GET /api/v1/courses/:course_id/assignments`.
@@ -75,10 +75,11 @@ This document formalizes the technical architecture, technology stack, and compo
 ### 3.2 PowerSchool SIS SAML SSO Ingestion
 * **Mechanism:** Playwright Chromium headless browser session.
 * **Workflow:**
-  1. Playwright navigates to `https://powerschool.bcp.org/guardian/home.html`.
-  2. Follows SAML SSO redirect flow, submitting stored SSO credentials.
-  3. Captures session cookies (`JSESSIONID`, `psaid`) and parses course list, letter grades, percentage, and period attendance.
-  4. Fetches per-course assignment details at `/guardian/scores.html?frn=...`.
+  1. Engine checks Firestore for stored session cookies (`psaid`).
+  2. If session cookies are valid, Playwright injects cookies and navigates directly to `/guardian/home.html`.
+  3. If session expired or missing, Playwright navigates to `https://powerschool.bcp.org/guardian/home.html`, follows SAML SSO redirect flow, and submits stored credentials from GCP Secret Manager.
+  4. Persists updated session cookies back to Firestore.
+  5. Captures course list, letter grades, percentage, period attendance, and detailed assignment records.
 
 ---
 
@@ -90,6 +91,10 @@ Firestore maintains a single primary document per monitored student: `students/{
 {
   "student_id": "bcp_student_123",
   "last_synced_at": "2026-08-21T17:00:00Z",
+  "session_cookies": {
+    "psaid": "encrypted_cookie_string",
+    "updated_at": "2026-08-21T17:00:00Z"
+  },
   "courses": {
     "ALG2_H": {
       "name": "Algebra 2 Honors",
@@ -127,19 +132,20 @@ Firestore maintains a single primary document per monitored student: `students/{
 
 ## 5. Alert Heuristics & Business Rules
 
-1. **Digital Missing Work Grace Period:** Digital Canvas assignments (`online_upload`) trigger a 36 school-day hour delay window (`GRACE_PERIOD`) that pauses on weekends and holidays before dispatching a parent email, allowing student self-correction.
-2. **Confirmed PowerSchool Missing Work:** Bypasses grace period if PowerSchool confirms `isMissing: true` or `score: 0` (PowerSchool is official system of record).
-3. **Paper Work Handling:** Canvas `missing: true` status for non-digital items (`on_paper`, `none`) is suppressed, deferring entirely to PowerSchool gradebook updates.
-4. **Grade Velocity Drop:** Triggers P0 alert if rolling 7-day course grade drops by $\Delta \ge 4.0\%$, provided course has $\ge 100$ graded points OR term length $\ge 21$ days (suppresses early-term noise). Highlights assignment causing max point loss.
-5. **Attendance Anomaly:** Triggers P0 Push Alert daily at 4:00 PM strictly for unexcused absences (`A`) or class cuts (`CUT`). Minor tardies (`T`) and unverified entries (`U`) are batched into the Sunday P1 email digest.
-6. **Workload Clumping:** Flags Sunday digest banner if $\ge 2$ major assessments (tests, exams, projects or $\ge 50$ pts) fall within any 48-hour window over the next 7 days.
+1. **Pure Asymmetric System Authority:** Canvas LMS and PowerSchool SIS entities are tracked independently. No cross-system title matching is performed.
+2. **Digital Missing Work Grace Period:** Digital Canvas assignments (`online_upload`) trigger a 36-calendar-hour delay window (`GRACE_PERIOD`) that pauses on weekends (Friday 5 PM to Monday 8 AM) before dispatching a parent email. Official holiday calendars are ignored.
+3. **Confirmed PowerSchool Missing Work:** Bypasses grace period if PowerSchool confirms `isMissing: true` or `score: 0` (PowerSchool is official SIS system of record).
+4. **Paper Work Handling:** Canvas `missing: true` status for non-digital items (`on_paper`, `none`) is suppressed, deferring entirely to PowerSchool gradebook updates.
+5. **Grade Velocity Drop:** Triggers P0 email alert during 5:00 PM daily batch run if rolling course grade drops by $\Delta \ge 4.0\%$ compared to the closest historical snapshot in Firestore within $[t-10, t-7]$ days, provided course has $\ge 100$ graded points OR term length $\ge 21$ days. Payload reports Course Name, Old Grade %, New Grade %, and Delta % (no assignment attribution).
+6. **Attendance Anomaly:** Triggers P0 Email Alert during 5:00 PM daily batch run strictly for unexcused absences (`A`) or class cuts (`CUT`). Minor tardies (`T`) and unverified entries (`U`) are batched into the Sunday P1 email digest.
+7. **Workload Clumping:** Flags Sunday digest banner if $\ge 2$ major assessments (tests, exams, projects or $\ge 50$ pts) fall within any 48-hour window over the next 7 days.
 
 ---
 
 ## 6. Infrastructure Actuation & Deployment Policy
 
 ### 6.1 Terraform Infrastructure Configuration
-All GCP resources are managed declaratively in the `terraform/` directory:
+All GCP resources are managed declaratively in `terraform/`:
 * `main.tf` / `variables.tf`: GCP provider configuration and project variables.
 * `cloud_run.tf`: Cloud Run Job definition (container specification, memory/CPU allocation, environment variables).
 * `scheduler.tf`: Cloud Scheduler HTTP trigger schedules (5:00 PM weekdays, 6:00 PM Sunday).
@@ -148,12 +154,12 @@ All GCP resources are managed declaratively in the `terraform/` directory:
 
 ### 6.2 CI/CD Actuation via Guardian (`abcxyz/guardian`)
 Infrastructure changes are automated using Google's **Guardian** (`github.com/abcxyz/guardian`):
-* **Pull Request Workflow (`guardian plan`):** Executes `terraform plan` on incoming PRs and posts formatted speculative diffs back to the PR comments.
+* **Pull Request Workflow (`guardian plan`):** Executes `terraform plan` on incoming PRs and posts formatted speculative diffs back to PR comments.
 * **Merge Workflow (`guardian apply`):** Executes `terraform apply` upon merge to `main`, updating production infrastructure automatically.
 
 ### 6.3 Deployment Model ("Test in Prod")
 Bellmon strictly adheres to a **single production environment** deployment model:
 * No staging environment overhead.
-* Automated tests run locally and in GitHub Actions before merge.
+* Automated unit tests run locally and in GitHub Actions before merge.
 * Infrastructure changes deploy directly to production GCP resources via Guardian.
 
