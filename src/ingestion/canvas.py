@@ -37,8 +37,8 @@ class CanvasAssignment(BaseModel):
 class CanvasClient:
     """Canvas LMS REST API Client handling authentication, retries, and data parsing."""
 
-    def __init__(self, base_url: str = "https://canvas.instructure.com", token: Optional[str] = None):
-        self.base_url = base_url.rstrip("/")
+    def __init__(self, base_url: str = "https://bcp.instructure.com", token: Optional[str] = None):
+        self.base_url = os.getenv("CANVAS_BASE_URL", base_url).rstrip("/")
         self.token = token or self._resolve_token()
         self.session = self._create_session()
 
@@ -63,9 +63,9 @@ class CanvasClient:
     def _create_session(self) -> requests.Session:
         session = requests.Session()
         retry_strategy = Retry(
-            total=3,
-            backoff_factor=1,
-            status_forcelist=[429, 500, 502, 503, 504],
+            total=1,
+            backoff_factor=0.5,
+            status_forcelist=[429],
             allowed_methods=["GET"]
         )
         adapter = HTTPAdapter(max_retries=retry_strategy)
@@ -73,14 +73,15 @@ class CanvasClient:
         session.mount("http://", adapter)
         session.headers.update({
             "Authorization": f"Bearer {self.token}",
-            "Accept": "application/json"
+            "Accept": "application/json",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         })
         return session
 
     def get_courses(self) -> List[CanvasCourse]:
         """Fetch active enrolled courses for observee."""
         url = f"{self.base_url}/api/v1/courses"
-        resp = self.session.get(url, timeout=10)
+        resp = self.session.get(url, timeout=5)
         resp.raise_for_status()
         data = resp.json()
         return [CanvasCourse.model_validate(c) for c in data if isinstance(c, dict) and "id" in c]
