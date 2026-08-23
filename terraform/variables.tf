@@ -15,3 +15,9 @@ variable "environment" {
   description = "Environment tier"
   default     = "prod"
 }
+
+variable "container_image" {
+  type        = string
+  description = "Container image URL in GCP Artifact Registry"
+  default     = "us-central1-docker.pkg.dev/bellmon/bellmon-repo/batch-runner:latest"
+}
