@@ -1,5 +1,8 @@
 """
 Canvas LMS REST API Ingestion Client module.
+
+Leverages standard open-source HTTP libraries (requests, urllib3) and Pydantic schema validation
+to interact directly with official Canvas LMS REST API observer endpoints (Principle 6 Compliance).
 """
 
 import os

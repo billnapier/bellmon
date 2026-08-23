@@ -9,3 +9,7 @@
 ## 2. Schema Validation: Pydantic v2
 * **Decision**: Pydantic `BaseModel` data models for `CanvasAssignment` and `CanvasCourse`.
 * **Rationale**: Automatic type validation, ISO timestamp parsing, alias mapping (`due_at`, `points_possible`), and clean serialization to JSON.
+
+## 3. Standard REST API & Open-Source Reuse (Principle 6 Compliance)
+* **Decision**: Utilize standard open-source HTTP and validation packages (`requests`, `pydantic`, `urllib3`) to query Canvas LMS REST API.
+* **Rationale**: Canvas LMS provides native REST API observer tokens (`Authorization: Bearer <token>`). Unlike PowerSchool's SAML SSO portal, Canvas supports official API tokens for parent observers, eliminating the need for browser automation (Playwright) and strictly adhering to Principle 6 (Open-Source First).
