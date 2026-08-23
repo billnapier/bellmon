@@ -44,7 +44,7 @@ jobs:
         env:
           GUARDIAN_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          guardian plan -child-setup-dir=terraform
+          guardian plan -dir=terraform
 
   guardian-apply:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -78,4 +78,4 @@ jobs:
         env:
           GUARDIAN_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          guardian apply -child-setup-dir=terraform
+          guardian apply -dir=terraform
