@@ -8,7 +8,7 @@ resource "google_cloud_run_v2_job" "sentinel_batch_job" {
       service_account = google_service_account.sentinel_runner.email
 
       containers {
-        image = "gcr.io/${var.project_id}/bellmon-sentinel:latest"
+        image = "us-docker.pkg.dev/cloudrun/container/hello:latest"
 
         resources {
           limits = {
