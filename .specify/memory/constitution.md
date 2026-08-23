@@ -1,14 +1,14 @@
 <!--
 Sync Impact Report:
-- Version change: v1.4.0 -> v1.5.0
-- Added Sections: Mandatory CI Unit Testing on PRs under Principle 1 & Principle 5
-- Modified Guidance: Explicitly mandates that CI workflows MUST execute the complete pytest unit test suite on all Pull Requests targeting main prior to merge approval.
-- Status: ✅ Constitution ratified v1.5.0
+- Version change: v1.5.0 -> v1.6.0
+- Added Sections: Principle 6 (Open-Source First & Justified Custom Auth)
+- Modified Guidance: Mandates prioritizing established open-source libraries and PyPI packages whenever feasible; restricts custom authentication drivers (e.g. Playwright SAML scrapers) to portals where official OAuth/API access is unavailable.
+- Status: ✅ Constitution ratified v1.6.0
 -->
 
 # Project Constitution: Bellmon (Bellarmine Monitor)
 
-**Version**: 1.5.0  
+**Version**: 1.6.0  
 **Ratified**: 2026-08-21  
 **Last Amended**: 2026-08-22  
 
@@ -36,6 +36,10 @@ PowerSchool SIS is the authoritative system of record for official course grades
 * **Mandatory PR Lifecycle**: All code, configuration, workflow, and infrastructure modifications MUST be committed to a dedicated feature/fix branch and submitted via a GitHub Pull Request (`gh pr create`).
 * **Mandatory CI Unit Test Execution**: CI workflows MUST automatically run the complete Python test suite (`pytest`) on every Pull Request targeting `main` to guarantee zero regressions prior to merge approval.
 * **Guardian PR-Bound Lifecycle**: Guardian CLI relies on GitHub Pull Request metadata to bind and retrieve Terraform plan files stored in Google Cloud Storage (`-storage=gcs://bellmon-tf-state`). Submitting a Pull Request and merging it is the ONLY valid mechanism for executing infrastructure changes in CI/CD.
+
+### Principle 6: Open-Source First & Justified Custom Auth
+* **Prefer Standard Open-Source Libraries**: Developers and AI agents MUST prioritize using established open-source software (OSS) libraries, official SDKs, and PyPI packages (e.g., `requests`, `pydantic`, `google-cloud-*`, `beautifulsoup4`) for data models, API integrations, and system parsing.
+* **Justified Custom Auth Models**: Custom authentication drivers (e.g., Playwright SAML SSO scrapers) are permitted ONLY when official REST/OAuth API access is unavailable or locked down by institution policies. Custom auth models MUST explicitly document why standard OSS client libraries cannot be used.
 
 ---
 
