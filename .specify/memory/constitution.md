@@ -1,16 +1,16 @@
 <!--
 Sync Impact Report:
-- Version change: v1.2.1 -> v1.3.0
-- Added Sections: Principle 4 (Dynamic Environment Querying & Zero Invented Names)
-- Modified Guidance: Forbids inventing or hardcoding project names/IDs; mandates gcloud config get-value project and prohibits hardcoded default project IDs in Terraform variables.tf.
-- Status: ✅ Constitution ratified v1.3.0
+- Version change: v1.3.0 -> v1.4.0
+- Added Sections: Principle 5 (PR-Only Enforcement & Zero Direct Pushes to Main)
+- Modified Guidance: Prohibits direct pushes to main branch under any circumstances; mandates dedicated fix/feature branches and GitHub Pull Requests for all code, infrastructure, and workflow modifications.
+- Status: ✅ Constitution ratified v1.4.0
 -->
 
 # Project Constitution: Bellmon (Bellarmine Monitor)
 
-**Version**: 1.3.0  
+**Version**: 1.4.0  
 **Ratified**: 2026-08-21  
-**Last Amended**: 2026-08-21  
+**Last Amended**: 2026-08-22  
 
 ---
 
@@ -25,11 +25,16 @@ No plain-text tokens, passwords, or SAML credentials shall ever be committed to 
 ### Principle 3: Asymmetric System Authority
 PowerSchool SIS is the authoritative system of record for official course grades, period-level attendance, and formal transcripts. Canvas LMS is an auxiliary system of record for digital assignment submissions and due dates. The engine MUST evaluate missing work independently per system without enforcing title-matching across platforms.
 
-### Principle 4: Zero Fake Placeholders & Dynamic Environment Querying *(Expanded)*
+### Principle 4: Zero Fake Placeholders & Dynamic Environment Querying
 * **No Hardcoded Placeholders or Invented Names**: Agents MUST NEVER invent, guess, or hardcode fake placeholders or project names (e.g., `123456789`, `bellmon-prod`, `my-project-id`, `dummy-token`) in source code, Terraform configurations, or CI/CD workflow files.
 * **No Default Project Variables**: Terraform `variables.tf` files MUST NOT specify hardcoded `default` values for GCP Project IDs or account names unless explicitly declared in the spec.
 * **GitHub Secrets Enforcement**: All infrastructure identifiers, project numbers, service accounts, and API tokens in CI/CD workflows MUST reference GitHub Secrets (e.g., `${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}`).
 * **Dynamic Environment Querying**: Setup scripts in `quickstart.md` and chat action items MUST be 100% copy-paste executable. They MUST dynamically derive project names and IDs from the developer's live CLI environment (e.g., `export GCP_PROJECT_ID=$(gcloud config get-value project)` and `export GCP_PROJECT_NUMBER=$(gcloud projects describe ...)`), requiring ZERO manual string editing or string hunting from the developer.
+
+### Principle 5: PR-Only Enforcement & Zero Direct Pushes to Main
+* **No Direct Pushes to Main**: AI agents and human developers MUST NEVER push commits directly to `main` under any circumstances (including bug fixes, documentation updates, or workflow adjustments).
+* **Mandatory PR Lifecycle**: All code, configuration, workflow, and infrastructure modifications MUST be committed to a dedicated feature/fix branch and submitted via a GitHub Pull Request (`gh pr create`).
+* **Guardian PR-Bound Lifecycle**: Guardian CLI relies on GitHub Pull Request metadata to bind and retrieve Terraform plan files stored in Google Cloud Storage (`-storage=gcs://bellmon-tf-state`). Submitting a Pull Request and merging it is the ONLY valid mechanism for executing infrastructure changes in CI/CD.
 
 ---
 
