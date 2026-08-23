@@ -1,14 +1,14 @@
 <!--
 Sync Impact Report:
-- Version change: v1.3.0 -> v1.4.0
-- Added Sections: Principle 5 (PR-Only Enforcement & Zero Direct Pushes to Main)
-- Modified Guidance: Prohibits direct pushes to main branch under any circumstances; mandates dedicated fix/feature branches and GitHub Pull Requests for all code, infrastructure, and workflow modifications.
-- Status: ✅ Constitution ratified v1.4.0
+- Version change: v1.4.0 -> v1.5.0
+- Added Sections: Mandatory CI Unit Testing on PRs under Principle 1 & Principle 5
+- Modified Guidance: Explicitly mandates that CI workflows MUST execute the complete pytest unit test suite on all Pull Requests targeting main prior to merge approval.
+- Status: ✅ Constitution ratified v1.5.0
 -->
 
 # Project Constitution: Bellmon (Bellarmine Monitor)
 
-**Version**: 1.4.0  
+**Version**: 1.5.0  
 **Ratified**: 2026-08-21  
 **Last Amended**: 2026-08-22  
 
@@ -31,9 +31,10 @@ PowerSchool SIS is the authoritative system of record for official course grades
 * **GitHub Secrets Enforcement**: All infrastructure identifiers, project numbers, service accounts, and API tokens in CI/CD workflows MUST reference GitHub Secrets (e.g., `${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}`).
 * **Dynamic Environment Querying**: Setup scripts in `quickstart.md` and chat action items MUST be 100% copy-paste executable. They MUST dynamically derive project names and IDs from the developer's live CLI environment (e.g., `export GCP_PROJECT_ID=$(gcloud config get-value project)` and `export GCP_PROJECT_NUMBER=$(gcloud projects describe ...)`), requiring ZERO manual string editing or string hunting from the developer.
 
-### Principle 5: PR-Only Enforcement & Zero Direct Pushes to Main
+### Principle 5: PR-Only Enforcement & Mandatory CI Testing
 * **No Direct Pushes to Main**: AI agents and human developers MUST NEVER push commits directly to `main` under any circumstances (including bug fixes, documentation updates, or workflow adjustments).
 * **Mandatory PR Lifecycle**: All code, configuration, workflow, and infrastructure modifications MUST be committed to a dedicated feature/fix branch and submitted via a GitHub Pull Request (`gh pr create`).
+* **Mandatory CI Unit Test Execution**: CI workflows MUST automatically run the complete Python test suite (`pytest`) on every Pull Request targeting `main` to guarantee zero regressions prior to merge approval.
 * **Guardian PR-Bound Lifecycle**: Guardian CLI relies on GitHub Pull Request metadata to bind and retrieve Terraform plan files stored in Google Cloud Storage (`-storage=gcs://bellmon-tf-state`). Submitting a Pull Request and merging it is the ONLY valid mechanism for executing infrastructure changes in CI/CD.
 
 ---
