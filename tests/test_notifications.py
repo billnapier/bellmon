@@ -1,13 +1,15 @@
 """
-Unit tests for Bellmon Notification Router, HTML Renderer, and SendGrid Client.
+Unit tests for Bellmon Notification Router, HTML Renderer, and Resend Client.
 """
 
+import json
+import urllib.error
 import pytest
 from unittest.mock import patch, MagicMock
 
 from src.notifications.models import EmailPayload, DispatchResult
 from src.notifications.renderer import NotificationRenderer
-from src.notifications.sendgrid import SendGridClient
+from src.notifications.resend import ResendClient
 from src.notifications.router import NotificationRouter
 from src.engine.models import PendingMissingAlert, PendingGradeDropAlert, AlertSource
 from src.storage.models import AttendanceEvent, AttendanceCodeSeverity
@@ -76,8 +78,8 @@ def test_notification_renderer_compiles_html_and_text(sample_alerts):
     assert "ATTENDANCE ANOMALIES (1 item(s))" in text_fallback
 
 
-def test_sendgrid_client_dry_run_simulation():
-    client = SendGridClient(dry_run=True)
+def test_resend_client_dry_run_simulation():
+    client = ResendClient(dry_run=True)
     payload = EmailPayload(
         recipient_email="parent@example.com",
         student_name="Jane Doe",
@@ -96,14 +98,14 @@ def test_sendgrid_client_dry_run_simulation():
 
 
 @patch("urllib.request.urlopen")
-def test_sendgrid_client_live_dispatch_success(mock_urlopen):
-    # Mock successful SendGrid 202 response
+def test_resend_client_live_dispatch_success(mock_urlopen):
+    # Mock successful Resend 200/201 response with JSON body
     mock_response = MagicMock()
-    mock_response.getcode.return_value = 202
-    mock_response.info.return_value = {"X-Message-Id": "sg-msg-12345"}
+    mock_response.getcode.return_value = 200
+    mock_response.read.return_value = json.dumps({"id": "re_123456789"}).encode("utf-8")
     mock_urlopen.return_value.__enter__.return_value = mock_response
 
-    client = SendGridClient(api_key="SG.test_key", dry_run=False)
+    client = ResendClient(api_key="re_test_key", dry_run=False)
     payload = EmailPayload(
         recipient_email="parent@example.com",
         student_name="Jane Doe",
@@ -116,7 +118,35 @@ def test_sendgrid_client_live_dispatch_success(mock_urlopen):
 
     assert result.success is True
     assert result.dry_run is False
-    assert result.message_id == "sg-msg-12345"
+    assert result.message_id == "re_123456789"
+
+
+@patch("urllib.request.urlopen")
+def test_resend_client_live_dispatch_http_error(mock_urlopen):
+    # Mock HTTP error response from Resend API
+    mock_error = urllib.error.HTTPError(
+        url="https://api.resend.com/emails",
+        code=422,
+        msg="Unprocessable Entity",
+        hdrs={},
+        fp=MagicMock(read=lambda: b'{"message": "Invalid email address"}'),
+    )
+    mock_urlopen.side_effect = mock_error
+
+    client = ResendClient(api_key="re_test_key", dry_run=False)
+    payload = EmailPayload(
+        recipient_email="invalid-email",
+        student_name="Jane Doe",
+        subject="[Test Alert]",
+        html_body="<p>Test</p>",
+        text_fallback="Test",
+    )
+
+    result = client.send_email(payload)
+
+    assert result.success is False
+    assert result.dry_run is False
+    assert "Resend HTTP 422" in result.error_message
 
 
 def test_notification_router_skips_when_no_alerts():
