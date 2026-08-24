@@ -1,8 +1,8 @@
 # Speckit Status Dashboard
 
-**Generated**: 2026-08-24T04:30:00Z  
+**Generated**: 2026-08-24T04:35:45Z  
 **Total Features**: 10  
-**Overall Completion**: 70.0%
+**Overall Completion**: 84.0%
 
 ## Overview
 
@@ -15,9 +15,9 @@
 | `005-phase-0-5-container-cd-pipeline` | Implement | 100% | 0 | Phase 0 complete |
 | `006-phase-1-1-firestore-state-engine` | Implement | 100% | 0 | Phase 1.1 complete |
 | `007-phase-1-2-asymmetric-authority-grace-period` | Implement | 100% | 0 | Phase 1.2 complete |
-| `008-phase-1-3-grade-velocity-sentinel` | Specify | 20% | 0 | Ready for plan/auto |
-| `009-phase-1-4-attendance-anomaly-sentinel` | Specify | 20% | 0 | Ready for plan/auto |
-| `010-phase-1-5-sendgrid-email-notification-router` | Specify | 20% | 2 (Specs 008-009) | Await Specs 008-009 implementation |
+| `008-phase-1-3-grade-velocity-sentinel` | Implement | 100% | 0 | Phase 1.3 complete |
+| `009-phase-1-4-attendance-anomaly-sentinel` | Specify | 20% | 0 | Ready for `/speckit.plan` or `/speckit.auto` |
+| `010-phase-1-5-sendgrid-email-notification-router` | Specify | 20% | 1 (Spec 009) | Await Spec 009 implementation |
 
 ## Feature Details
 
@@ -31,7 +31,7 @@
 ### Phase 1: MVP Core Academic & Attendance Sentinel (In Progress)
 - **006 Firestore State Persistence Engine**: Spec 100% | Plan 100% | Tasks 100% (11/11) | Implementation PASS
 - **007 Asymmetric Authority & Grace Period Engine**: Spec 100% | Plan 100% | Tasks 100% (8/8) | Implementation PASS
-- **008 Grade Velocity Drop Sentinel**: Spec 100% | Plan 0% | Tasks 0%
+- **008 Grade Velocity Drop Sentinel**: Spec 100% | Plan 100% | Tasks 100% (12/12) | Implementation PASS
 - **009 Attendance Anomaly Sentinel**: Spec 100% | Plan 0% | Tasks 0%
 - **010 SendGrid Email Router & Integration**: Spec 100% | Plan 0% | Tasks 0%
 
@@ -39,7 +39,8 @@
 
 ## Summary
 
-- **Features Fully Implemented**: 7 (Phase 0 complete + Specs 006, 007)
-- **Features Ready for Implementation**: 2 (`008`, `009`)
-- **Features Blocked by Dependencies**: 1 (`010` awaiting 008-009)
-- **Overall Project Completion**: 70.0%
+- **Features Fully Implemented**: 8 (Phase 0 complete + Specs 006, 007, 008)
+- **Features Ready for Implementation**: 1 (`009`)
+- **Features Blocked by Dependencies**: 1 (`010` awaiting 009)
+- **Overall Project Completion**: 84.0%
+
