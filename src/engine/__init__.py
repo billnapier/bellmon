@@ -11,9 +11,14 @@ from src.engine.models import (
     PendingGradeDropAlert,
     CourseVelocityInput,
     StudentVelocityContext,
+    AttendanceCodeSeverity,
+    AttendanceRecordInput,
+    AttendanceEvent,
+    PendingAttendanceAlert,
 )
 from src.engine.authority import AsymmetricAuthorityEngine
 from src.engine.velocity import GradeVelocityEngine
+from src.engine.attendance import AttendanceSentinel
 
 __all__ = [
     "AssignmentStatus",
@@ -24,6 +29,11 @@ __all__ = [
     "PendingGradeDropAlert",
     "CourseVelocityInput",
     "StudentVelocityContext",
+    "AttendanceCodeSeverity",
+    "AttendanceRecordInput",
+    "AttendanceEvent",
+    "PendingAttendanceAlert",
     "AsymmetricAuthorityEngine",
     "GradeVelocityEngine",
+    "AttendanceSentinel",
 ]
