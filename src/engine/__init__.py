@@ -8,7 +8,12 @@ from src.engine.models import (
     CanvasAssignmentInput,
     PowerSchoolAssignmentInput,
     PendingMissingAlert,
+    PendingGradeDropAlert,
+    CourseVelocityInput,
+    StudentVelocityContext,
 )
+from src.engine.authority import AsymmetricAuthorityEngine
+from src.engine.velocity import GradeVelocityEngine
 
 __all__ = [
     "AssignmentStatus",
@@ -16,4 +21,9 @@ __all__ = [
     "CanvasAssignmentInput",
     "PowerSchoolAssignmentInput",
     "PendingMissingAlert",
+    "PendingGradeDropAlert",
+    "CourseVelocityInput",
+    "StudentVelocityContext",
+    "AsymmetricAuthorityEngine",
+    "GradeVelocityEngine",
 ]
