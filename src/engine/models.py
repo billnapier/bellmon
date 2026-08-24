@@ -5,6 +5,7 @@ Data models and Enums for the Asymmetric System Authority Engine.
 from enum import Enum
 from typing import List, Optional
 from pydantic import BaseModel, Field
+from src.storage.models import GradeSnapshot
 
 
 class AssignmentStatus(str, Enum):
@@ -53,3 +54,31 @@ class PendingMissingAlert(BaseModel):
     source: AlertSource
     points_possible: Optional[float] = None
     detected_at: str  # ISO timestamp
+
+
+class PendingGradeDropAlert(BaseModel):
+    """Structured alert record for a detected grade velocity drop (>= 4.0%)."""
+    course_id: str
+    course_name: str
+    prev_percentage: float
+    curr_percentage: float
+    delta: float
+    detected_at: str  # ISO timestamp
+
+
+class CourseVelocityInput(BaseModel):
+    """Input parameters for course velocity drop evaluation."""
+    course_id: str
+    course_name: str
+    current_percentage: float
+    history: List[GradeSnapshot] = Field(default_factory=list)
+    total_graded_points: Optional[float] = None
+    term_active_days: Optional[int] = None
+
+
+class StudentVelocityContext(BaseModel):
+    """Context holding student registration and history tracking information for silent warming protocol."""
+    student_id: str
+    tracking_start_date: str  # Format: YYYY-MM-DD or ISO timestamp
+    courses: List[CourseVelocityInput] = Field(default_factory=list)
+
