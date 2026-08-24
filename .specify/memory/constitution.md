@@ -1,16 +1,16 @@
 <!--
 Sync Impact Report:
-- Version change: v1.5.0 -> v1.6.0
-- Added Sections: Principle 6 (Open-Source First & Justified Custom Auth)
-- Modified Guidance: Mandates prioritizing established open-source libraries and PyPI packages whenever feasible; restricts custom authentication drivers (e.g. Playwright SAML scrapers) to portals where official OAuth/API access is unavailable.
-- Status: ✅ Constitution ratified v1.6.0
+- Version change: v1.6.0 -> v1.7.0
+- Added Sections: Principle 7 (Automated Container CI/CD & Hands-Free Deployment)
+- Modified Guidance: Mandates automated container image building, tagging with commit SHA and latest, pushing to GCP Artifact Registry, and updating Cloud Run resources upon Pull Request merge to main.
+- Status: ✅ Constitution ratified v1.7.0
 -->
 
 # Project Constitution: Bellmon (Bellarmine Monitor)
 
-**Version**: 1.6.0  
+**Version**: 1.7.0  
 **Ratified**: 2026-08-21  
-**Last Amended**: 2026-08-22  
+**Last Amended**: 2026-08-23  
 
 ---
 
@@ -40,6 +40,11 @@ PowerSchool SIS is the authoritative system of record for official course grades
 ### Principle 6: Open-Source First & Justified Custom Auth
 * **Prefer Standard Open-Source Libraries**: Developers and AI agents MUST prioritize using established open-source software (OSS) libraries, official SDKs, and PyPI packages (e.g., `requests`, `pydantic`, `google-cloud-*`, `beautifulsoup4`) for data models, API integrations, and system parsing.
 * **Justified Custom Auth Models**: Custom authentication drivers (e.g., Playwright SAML SSO scrapers) are permitted ONLY when official REST/OAuth API access is unavailable or locked down by institution policies. Custom auth models MUST explicitly document why standard OSS client libraries cannot be used.
+
+### Principle 7: Automated Container CI/CD & Hands-Free Deployment
+* **Automated Container CD on Merge**: Merging a Pull Request to `main` MUST automatically trigger container image builds (`docker build`), tag images with commit SHA (`${{ github.sha }}`) and `latest`, push to GCP Artifact Registry, and update Cloud Run jobs/services (`gcloud run jobs update`) without manual CLI interventions.
+* **Zero Manual Production Builds**: Developer machines MUST NOT be used to manually build or push production container images. All production container artifacts MUST be built reproducibly by GitHub Actions CI/CD workflows.
+* **Traceable Deployment Artifacts**: Every deployed container image in GCP Artifact Registry and Cloud Run MUST be traceable directly to an explicit commit SHA in `main`.
 
 ---
 
