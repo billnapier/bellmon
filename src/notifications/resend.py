@@ -32,6 +32,19 @@ class ResendClient:
             from_email: Sender email address or name format.
             dry_run: Forced dry-run flag (defaults to DRY_RUN env var or True if api_key is missing).
         """
+        if not api_key and not os.getenv("RESEND_API_KEY") and os.path.exists(".env"):
+            try:
+                with open(".env", "r") as f:
+                    for line in f:
+                        line_str = line.strip()
+                        if line_str.startswith("RESEND_API_KEY="):
+                            api_key = line_str.split("=", 1)[1].strip('"\'')
+                        elif line_str.startswith("DRY_RUN=") and dry_run is None:
+                            val = line_str.split("=", 1)[1].strip('"\'').lower()
+                            dry_run = val in ("true", "1", "yes")
+            except Exception:
+                pass
+
         self.api_key = api_key or os.getenv("RESEND_API_KEY")
         self.from_email = from_email
 
