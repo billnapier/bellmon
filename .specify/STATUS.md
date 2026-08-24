@@ -1,16 +1,17 @@
 # Speckit Status Dashboard
 
-**Generated**: 2026-08-22T22:22:39-07:00  
-**Total Features**: 4  
+**Generated**: 2026-08-23T21:15:00-07:00  
+**Total Features**: 5  
 
 ## Overview
 
 | Feature | Phase | Progress | Blockers | Next Action |
 |---------|-------|----------|----------|-------------|
 | `001-phase-0-1-infrastructure-poc` | Complete | 100% | 0 | Merged to `main` |
-| `002-phase-0-2-canvas-ingestion` | Complete | 100% | 0 | Merged to `main` |
-| `003-phase-0-3-powerschool-scraper` | Complete | 100% | 0 | Merged to `main` |
-| `004-phase-0-4-batch-runner-poc` | Complete | 100% | 0 | PR #10 ready for review & merge |
+| `002-phase-0-2-canvas-ingestion` | Complete | 100% | 0 | Merged to `main` (#9) |
+| `003-phase-0-3-powerschool-scraper` | Complete | 100% | 0 | Merged to `main` (#6) |
+| `004-phase-0-4-batch-runner-poc` | Complete | 100% | 0 | Merged to `main` (#10) |
+| `005-phase-0-5-container-cd-pipeline` | Complete | 100% | 0 | Merged to `main` (#11) |
 
 ## Feature Details
 
@@ -37,7 +38,7 @@ Spec:  ██████████ 100%
 Plan:  ██████████ 100%
 Tasks: ██████████ 100% (10/10)
 ```
-- **Status**: Completed & Merged
+- **Status**: Completed & Merged (#6)
 
 ### 004-phase-0-4-batch-runner-poc (Containerized Cloud Run Batch Runner)
 ```
@@ -45,12 +46,20 @@ Spec:  ██████████ 100%
 Plan:  ██████████ 100%
 Tasks: ██████████ 100% (8/8)
 ```
-- **Status**: Completed (PR #10)
+- **Status**: Completed & Merged (#10)
+
+### 005-phase-0-5-container-cd-pipeline (Automated Container CI/CD Pipeline)
+```
+Spec:  ██████████ 100%
+Plan:  ██████████ 100%
+Tasks: ██████████ 100% (2/2)
+```
+- **Status**: Completed & Merged (#11)
 
 ---
 
 ## Summary
 
-- **Features Complete**: 4 / 4 (100%)
+- **Features Complete**: 5 / 5 (100%)
 - **Features Blocked**: 0
 - **Overall Project Phase 0 Completion**: 100%
