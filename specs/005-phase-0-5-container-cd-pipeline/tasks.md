@@ -14,7 +14,7 @@
   - Implement Docker build, tag (`${{ github.sha }}` & `latest`), and push steps to Artifact Registry (`us-central1-docker.pkg.dev/bellmon/bellmon-repo/sentinel-batch`).
   - Add Cloud Run Job update step (`gcloud run jobs update bellmon-sentinel-job`).
 
-- [ ] **Task 2: Commit, Push, and Open GitHub Pull Request** `[P1]`
+- [x] **Task 2: Commit, Push, and Open GitHub Pull Request** `[P1]`
   - Commit all feature spec and workflow changes to `005-phase-0-5-container-cd-pipeline`.
   - Push branch to GitHub.
   - Submit Pull Request using `gh pr create`.
