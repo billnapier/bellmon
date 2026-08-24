@@ -8,7 +8,7 @@ from typing import List, Any, Optional
 
 from src.notifications.models import EmailPayload, DispatchResult
 from src.notifications.renderer import NotificationRenderer
-from src.notifications.sendgrid import SendGridClient
+from src.notifications.resend import ResendClient
 
 logger = logging.getLogger("bellmon.notifications.router")
 
@@ -18,7 +18,7 @@ class NotificationRouter:
 
     def __init__(
         self,
-        sendgrid_client: Optional[SendGridClient] = None,
+        resend_client: Optional[ResendClient] = None,
         renderer: Optional[NotificationRenderer] = None,
         dry_run: Optional[bool] = None,
     ):
@@ -26,11 +26,11 @@ class NotificationRouter:
         Initializes NotificationRouter.
 
         Args:
-            sendgrid_client: Custom or default SendGridClient.
+            resend_client: Custom or default ResendClient.
             renderer: Custom or default NotificationRenderer.
             dry_run: Forced dry-run flag.
         """
-        self.client = sendgrid_client or SendGridClient(dry_run=dry_run)
+        self.client = resend_client or ResendClient(dry_run=dry_run)
         self.renderer = renderer or NotificationRenderer()
 
     def dispatch_alerts(

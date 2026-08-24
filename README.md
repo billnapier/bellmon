@@ -8,7 +8,7 @@ Built specifically for Bellarmine parents and students, Bellmon delivers proacti
 
 ## Key Features & Value Proposition
 
-* **Zero-Touch Monitoring:** Responsive HTML email alerts and weekly digests (SendGrid / SMTP) replace manual portal logins.
+* **Zero-Touch Monitoring:** Responsive HTML email alerts and weekly digests (Resend / SMTP) replace manual portal logins.
 * **Noise & False-Alarm Suppression:** Uses an Asymmetric System Authority Model to eliminate false alerts for paper/in-class assignments.
 * **36-Hour Student Autonomy Grace Period:** Gives students a 36-hour buffer (pausing on weekends) on overdue digital assignments to self-advocate and turn in work before emailing parents.
 * **Proactive Grade Velocity Drop Warnings:** Alerts immediately on rolling course grade drops ($\ge 4.0\%$) compared to historical snapshots ($[t-10, t-7]$ days).

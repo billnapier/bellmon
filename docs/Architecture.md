@@ -22,7 +22,7 @@ This document formalizes the technical architecture, technology stack, and compo
      ┌───────────────────┴───────┐       ┌───────┴───────────────────┐
      ▼                           ▼       ▼                           ▼
 ┌─────────┐             ┌─────────────────┐                     ┌─────────┐
-│ Canvas  │             │   PowerSchool   │                     │ SendGrid│
+│ Canvas  │             │   PowerSchool   │                     │  Resend │
 │ REST API│             │ Headless (SAML) │                     │ Email   │
 └────┬────┘             └────────┬────────┘                     └────▲────┘
      │                           │                                   │
@@ -56,8 +56,8 @@ This document formalizes the technical architecture, technology stack, and compo
 | **Execution Platform** | GCP Cloud Run Jobs | Containerized execution environment running on demand; 100% serverless and zero-cost within GCP free tier. |
 | **Job Scheduling** | GCP Cloud Scheduler | Cron-based HTTP triggers calling Cloud Run jobs daily (5:00 PM weekdays for P0 alerts; 6:00 PM Sunday for P1 digests). |
 | **State Storage** | Google Cloud Firestore | Serverless document database (`students/{student_id}`) storing snapshots, session cookies, assignment ledgers, and notification history. |
-| **Notification Engine** | SendGrid Web API | Delivers responsive HTML emails for both P0 urgent alerts and P1 Sunday planning digests (v1 MVP channel standard). |
-| **Secrets Management** | GCP Secret Manager | Securely stores Canvas API tokens, SendGrid API keys, and PowerSchool SSO credentials. |
+| **Notification Engine** | Resend API | Delivers responsive HTML emails for both P0 urgent alerts and P1 Sunday planning digests (v1 MVP channel standard). |
+| **Secrets Management** | GCP Secret Manager | Securely stores Canvas API tokens, Resend API keys, and PowerSchool SSO credentials. |
 | **System Monitoring** | GCP Cloud Monitoring | Configures log-based alert policies and Cloud Run job execution failure alerts via Terraform (`terraform/monitoring.tf`) to notify admins if scraping fails. |
 | **Infrastructure Config (IaC)** | Terraform | Declarative HCL definitions (`terraform/`) managing Cloud Run, Cloud Scheduler, Firestore, Monitoring, Secrets, and IAM. |
 | **CI/CD Actuation** | abcxyz/guardian | Google's Guardian GitHub Action workflow (`github.com/abcxyz/guardian`) executing automated Terraform plans and applies. |
@@ -149,7 +149,7 @@ All GCP resources are managed declaratively in `terraform/`:
 * `main.tf` / `variables.tf`: GCP provider configuration and project variables.
 * `cloud_run.tf`: Cloud Run Job definition (container specification, memory/CPU allocation, environment variables).
 * `scheduler.tf`: Cloud Scheduler HTTP trigger schedules (5:00 PM weekdays, 6:00 PM Sunday).
-* `secrets.tf`: Secret Manager secret declarations for Canvas Token, PowerSchool SSO credentials, and SendGrid API Key.
+* `secrets.tf`: Secret Manager secret declarations for Canvas Token, PowerSchool SSO credentials, and Resend API Key.
 * `iam.tf`: Service account definitions and IAM role bindings.
 
 ### 6.2 CI/CD Actuation via Guardian (`abcxyz/guardian`)

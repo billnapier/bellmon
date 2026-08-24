@@ -8,7 +8,7 @@ The **Student Academic & Workload Sentinel** is an automated, event-driven monit
 The system provides early-warning visibility into student risk factors—specifically unsubmitted assignments, steep grade trajectory drops, attendance anomalies, and high-stakes workload clumping—while strictly preserving student autonomy through heuristic-based noise filtering, configurable grace periods, and zero required app check-ins.
 
 ### 1.2 Core Objectives
-* **Zero-Touch Monitoring:** Deliver all actionable insights directly to parents/guardians via structured, responsive HTML email notifications (SendGrid / SMTP); eliminate manual portal logins and app-checking.
+* **Zero-Touch Monitoring:** Deliver all actionable insights directly to parents/guardians via structured, responsive HTML email notifications (Resend / SMTP); eliminate manual portal logins and app-checking.
 * **Noise & False-Positive Elimination:** Use an Asymmetric System Authority Model to decouple Canvas digital submissions from PowerSchool official gradebook records, eliminating paper submission mismatches and grading lag artifacts.
 * **Proactive Trajectory Tracking:** Alert on grade velocity drops ($\Delta \ge 4.0\%$) and upcoming workload clustering rather than waiting for formal report cards or end-of-term deficits.
 * **Student Autonomy & Grace Periods:** Provide a 36-hour delay window (1.5 calendar days, pausing on weekends) before emailing parents about digital missing assignments in Canvas, empowering students to self-advocate and resolve discrepancies with teachers directly.
@@ -140,13 +140,13 @@ Attendance anomalies are evaluated using a **Tiered Severity Model** during the 
 
 ## 5. Notification & Delivery Matrix
 
-> **v1 Channel Strategy:** All v1 notifications are delivered strictly via **Responsive HTML Email** (SendGrid / SMTP). Mobile push channels (Pushover / NTFY) are deferred to future roadmap iterations.
+> **v1 Channel Strategy:** All v1 notifications are delivered strictly via **Responsive HTML Email** (Resend / SMTP). Mobile push channels (Pushover / NTFY) are deferred to future roadmap iterations.
 
 | Alert Type | Priority | Target Audience | Target Channel (v1) | Dispatch Schedule | Payload Contents |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Confirmed Missing Work** | P0 | Parent / Guardian | Email (SendGrid / SMTP) | Weekdays at 5:00 PM | Course, Assignment Name, Due Date, Points Possible, System Source |
-| **Grade Drop ($\ge 4\%$)** | P0 | Parent / Guardian | Email (SendGrid / SMTP) | Weekdays at 5:00 PM | Course Name, Previous Grade %, Current Grade %, Delta % |
-| **Unexcused Absence / Cut** | P0 | Parent / Guardian | Email (SendGrid / SMTP) | Weekdays at 5:00 PM | Period Number, Course Name, Attendance Code (`A` / `CUT`) |
+| **Confirmed Missing Work** | P0 | Parent / Guardian | Email (Resend / SMTP) | Weekdays at 5:00 PM | Course, Assignment Name, Due Date, Points Possible, System Source |
+| **Grade Drop ($\ge 4\%$)** | P0 | Parent / Guardian | Email (Resend / SMTP) | Weekdays at 5:00 PM | Course Name, Previous Grade %, Current Grade %, Delta % |
+| **Unexcused Absence / Cut** | P0 | Parent / Guardian | Email (Resend / SMTP) | Weekdays at 5:00 PM | Period Number, Course Name, Attendance Code (`A` / `CUT`) |
 | **Weekly Planning Digest** | P1 | Parent / Guardian | Email (HTML Digest) | Sunday at 6:00 PM | Full Grade Summary, 7-day Deadlines, Workload Clumping, Weekly Tardy Summary |
 
 ---
@@ -204,7 +204,7 @@ The engine uses **Google Cloud Firestore** to maintain persistent state snapshot
 ### 7.1 Recommended Stack
 * **Runtime:** Python 3.11+ / Playwright Chromium / GCP Cloud Run Job
 * **Storage:** Google Cloud Firestore (`students/{student_id}`)
-* **Notifications (v1):** Responsive HTML Email via SendGrid / SMTP.
+* **Notifications (v1):** Responsive HTML Email via Resend / SMTP.
 * **Monitoring & Alerting:** GCP Cloud Monitoring (`terraform/monitoring.tf`) log-based alert policy for Cloud Run job execution failures.
 
 ### 7.2 Implementation Phases
@@ -216,7 +216,7 @@ The engine uses **Google Cloud Firestore** to maintain persistent state snapshot
    * Firestore state persistence engine.
    * Asymmetric System Authority Model rules (36h grace period evaluated via sub-daily job execution, pausing weekends; PowerSchool immediate missing alerts; silent warming grade velocity drop checks).
    * Attendance Anomaly Sentinel (P0 alerts for unexcused absences `A` and class cuts `CUT`).
-   * SendGrid HTML email notification router.
+   * Resend HTML email notification router.
 3. **Phase 2: Workload Radar & Sunday Digest**
    * Workload clumping evaluator ($\ge 2$ major assessments within 48h window).
    * Sunday 6:00 PM HTML email digest (grades, upcoming timeline, workload clumping, and weekly tardy summary).

@@ -21,7 +21,7 @@ class EmailPayload(BaseModel):
 
 
 class DispatchResult(BaseModel):
-    """Outcome of an email dispatch attempt via SendGrid or dry-run simulator."""
+    """Outcome of an email dispatch attempt via Resend or dry-run simulator."""
     success: bool
     message_id: Optional[str] = None
     recipient: str

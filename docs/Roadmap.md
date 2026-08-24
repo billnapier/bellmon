@@ -38,7 +38,7 @@ Focus: Eliminate false missing-assignment alarms, preserve student autonomy, cat
 * **Attendance Anomaly Sentinel (P0 Alerting)**
   * Evaluate period-level attendance data harvested from PowerSchool.
   * Dispatch urgent weekday email alerts for unexcused absences (`A`) or class cuts (`CUT`).
-* **Direct Email Alerts (SendGrid / SMTP)**
+* **Direct Email Alerts (Resend / SMTP)**
   * Deliver urgent P0 notification payloads directly to parent/guardian email addresses.
 
 ---
