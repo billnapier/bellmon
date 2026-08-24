@@ -56,7 +56,7 @@ class PowerSchoolScraper:
             try:
                 from google.cloud import secretmanager
                 client = self.secret_client or secretmanager.SecretManagerServiceClient()
-                project_id = os.getenv("GCP_PROJECT", "bellmon-prod")
+                project_id = os.getenv("GCP_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT") or "bellmon"
                 name = f"projects/{project_id}/secrets/powerschool-credentials/versions/latest"
                 response = client.access_secret_version(request={"name": name})
                 payload = response.payload.data.decode("UTF-8")

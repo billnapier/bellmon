@@ -49,7 +49,7 @@ class CanvasClient:
             try:
                 from google.cloud import secretmanager
                 client = secretmanager.SecretManagerServiceClient()
-                project_id = os.getenv("GCP_PROJECT", "bellmon-prod")
+                project_id = os.getenv("GCP_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT") or "bellmon"
                 name = f"projects/{project_id}/secrets/canvas-api-token/versions/latest"
                 response = client.access_secret_version(request={"name": name})
                 token = response.payload.data.decode("UTF-8")

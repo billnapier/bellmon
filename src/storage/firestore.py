@@ -109,7 +109,7 @@ class FirestoreStateEngine:
         else:
             try:
                 from google.cloud import firestore
-                pid = project_id or os.getenv("GCP_PROJECT_ID")
+                pid = project_id or os.getenv("GCP_PROJECT_ID") or os.getenv("GCP_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT") or "bellmon"
                 self.client = firestore.Client(project=pid)
             except Exception:
                 # Fall back to mock client if GCP credentials or client initialization fails
