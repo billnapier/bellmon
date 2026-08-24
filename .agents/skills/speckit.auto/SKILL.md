@@ -56,3 +56,4 @@ Given a target feature directory (e.g., `specs/002-phase-0-2-canvas-ingestion/`)
 1. **Phase 7 is Non-Negotiable**: No `speckit.auto` workflow execution is considered complete until Phase 7 (`git commit`, `git push`, and `gh pr create`) has executed successfully.
 2. **Required Final Artifact**: The final summary reported to the user MUST contain the live URL of the created GitHub Pull Request.
 3. **No Stopping After Testing**: Halting execution after test verification without pushing the branch and creating the PR is a strict protocol violation.
+4. **Mandatory PR Verification Step**: Before generating the final response turn, the agent MUST explicitly execute `gh pr view` or `gh pr list` to confirm the PR exists and include the verified URL in the response output.
