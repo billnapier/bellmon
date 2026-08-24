@@ -1,0 +1,52 @@
+name: Continuous Deployment - Container Image & Cloud Run
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+      - 'pyproject.toml'
+      - 'requirements.txt'
+      - '.github/workflows/cd-container.yml'
+
+jobs:
+  deploy-container:
+    name: Build, Push Container & Update Cloud Run Job
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Configure Docker for GCP Artifact Registry
+        run: |
+          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: Build and Push Docker Container
+        env:
+          REGISTRY_IMAGE: us-central1-docker.pkg.dev/bellmon/bellmon-repo/sentinel-batch
+        run: |
+          docker build -t ${REGISTRY_IMAGE}:${{ github.sha }} -t ${REGISTRY_IMAGE}:latest .
+          docker push ${REGISTRY_IMAGE}:${{ github.sha }}
+          docker push ${REGISTRY_IMAGE}:latest
+
+      - name: Update Cloud Run Job Image
+        env:
+          REGISTRY_IMAGE: us-central1-docker.pkg.dev/bellmon/bellmon-repo/sentinel-batch
+        run: |
+          gcloud run jobs update bellmon-sentinel-job \
+            --image ${REGISTRY_IMAGE}:${{ github.sha }} \
+            --region us-central1

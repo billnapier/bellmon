@@ -184,12 +184,15 @@ class PowerSchoolScraper:
         username, password = self._resolve_credentials()
         logger.info(f"Submitting SAML SSO login for user: {username}")
 
-        page.fill('input[name="username"], input#fieldAccount', username)
-        page.fill('input[name="password"], input#fieldPassword', password)
-        page.click('button[type="submit"], input[type="submit"], #btn-enter')
-
-        # Wait for navigation back to home or guardian portal
-        page.wait_for_load_state("networkidle")
+        try:
+            if page.query_selector('input[name="username"], input#fieldAccount'):
+                page.fill('input[name="username"], input#fieldAccount', username)
+            if page.query_selector('input[name="password"], input#fieldPassword'):
+                page.fill('input[name="password"], input#fieldPassword', password)
+            page.click('button[type="submit"], input[type="submit"], #btn-enter')
+            page.wait_for_load_state("domcontentloaded", timeout=5000)
+        except Exception as err:
+            logger.warning(f"SAML login step encountered non-fatal error/timeout: {err}")
 
     def run_browser_session(self, page_override: Optional[Any] = None) -> Dict[str, Any]:
         """Runs PowerSchool Playwright browser session with cookie reuse and SAML fallback."""
@@ -225,21 +228,28 @@ class PowerSchoolScraper:
                 }])
 
             page = context.new_page()
+            page.set_default_timeout(10000)
             target_url = f"{self.base_url}/guardian/home.html"
-            page.goto(target_url)
+            try:
+                page.goto(target_url, timeout=10000)
 
-            # Detect SAML login redirect
-            if "login" in page.url.lower() or page.query_selector('input[type="password"]'):
-                logger.info("Session cookie missing or expired. Performing SAML SSO login...")
-                self.execute_saml_login(page)
+                # Detect SAML login redirect
+                if "login" in page.url.lower() or page.query_selector('input[type="password"]'):
+                    logger.info("Session cookie missing or expired. Performing SAML SSO login...")
+                    self.execute_saml_login(page)
 
-                # Extract fresh psaid cookie
-                cookies = context.cookies()
-                for c in cookies:
-                    if c["name"] == "psaid":
-                        self.save_stored_cookies(psaid=c["value"])
-                        break
+                    # Extract fresh psaid cookie
+                    cookies = context.cookies()
+                    for c in cookies:
+                        if c["name"] == "psaid":
+                            self.save_stored_cookies(psaid=c["value"])
+                            break
 
-            html_content = page.content()
-            browser.close()
+                html_content = page.content()
+            except Exception as err:
+                logger.error(f"PowerSchool browser session navigation failed: {err}")
+                html_content = ""
+            finally:
+                browser.close()
+
             return self.parse_guardian_html(html_content)
