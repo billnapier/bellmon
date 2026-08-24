@@ -2,9 +2,10 @@
 Data models for Bellmon student academic state persistence in GCP Cloud Firestore.
 """
 
-from typing import Dict, List, Optional
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 from datetime import datetime, timezone
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class GradeSnapshot(BaseModel):
@@ -33,13 +34,37 @@ class TrackedAssignment(BaseModel):
     alert_dispatched: bool = False
 
 
+class AttendanceCodeSeverity(str, Enum):
+    """Severity classification for period attendance codes."""
+    P0_URGENT = "P0_URGENT"  # Immediate alert (A, CUT)
+    P1_DIGEST = "P1_DIGEST"  # Sunday digest queue (T, U)
+    IGNORED = "IGNORED"      # No action (P, E, EX, ACT)
+
+
 class AttendanceEvent(BaseModel):
     """Attendance anomaly event recorded from PowerSchool scraping."""
     date: str  # Format: YYYY-MM-DD
-    period: str
-    course: str
+    period: Union[int, str]
+    course_name: str = ""
     code: str  # Options: A, T, U, etc.
+    description: Optional[str] = None
+    severity: AttendanceCodeSeverity = AttendanceCodeSeverity.IGNORED
     notified: bool = False
+    detected_at: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_course_name(cls, data: Any):
+        if isinstance(data, dict):
+            if "course" in data and not data.get("course_name"):
+                data["course_name"] = data["course"]
+            elif "course_name" in data and not data.get("course"):
+                data["course"] = data["course_name"]
+        return data
+
+    @property
+    def course(self) -> str:
+        return self.course_name
 
 
 class SessionCookies(BaseModel):

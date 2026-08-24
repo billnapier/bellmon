@@ -5,7 +5,7 @@ Data models and Enums for the Asymmetric System Authority Engine.
 from enum import Enum
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from src.storage.models import GradeSnapshot
+from src.storage.models import GradeSnapshot, AttendanceCodeSeverity, AttendanceEvent
 
 
 class AssignmentStatus(str, Enum):
@@ -81,4 +81,26 @@ class StudentVelocityContext(BaseModel):
     student_id: str
     tracking_start_date: str  # Format: YYYY-MM-DD or ISO timestamp
     courses: List[CourseVelocityInput] = Field(default_factory=list)
+
+
+class AttendanceRecordInput(BaseModel):
+    """Raw attendance record harvested from PowerSchool."""
+    date: str             # Format: YYYY-MM-DD
+    period: int           # Class period number (e.g. 1, 2, 3)
+    course_name: str      # Name of the course (e.g. "Algebra II")
+    code: str             # Attendance code (e.g. "A", "CUT", "T", "U", "P", "E")
+    description: Optional[str] = None
+
+
+class PendingAttendanceAlert(BaseModel):
+    """Payload for P0 urgent attendance email alert."""
+    student_id: str
+    date: str
+    period: int
+    course_name: str
+    code: str
+    description: str
+    severity: AttendanceCodeSeverity = AttendanceCodeSeverity.P0_URGENT
+    detected_at: str      # ISO timestamp
+
 
