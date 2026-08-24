@@ -87,6 +87,7 @@ class ResendClient:
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
+            "User-Agent": "Bellmon-Academic-Sentinel/1.0",
         }
 
         body_data = {
