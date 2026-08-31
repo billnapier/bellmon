@@ -1,8 +1,8 @@
 # Speckit Status Dashboard
 
-**Generated**: 2026-08-24T05:35:00Z  
-**Total Features**: 13  
-**Overall Completion**: 100.0%
+**Generated**: 2026-08-31T05:48:00Z  
+**Total Features**: 17  
+**Overall Completion**: 76.5% (13/17 complete)
 
 ## Overview
 
@@ -21,6 +21,10 @@
 | `011-phase-2-1-workload-clumping-radar` | Validate | 100% | 0 | Phase 2.1 complete & merged (PR #18) |
 | `012-phase-2-2-sunday-planning-digest` | Validate | 100% | 0 | Phase 2.2 complete |
 | `013-phase-1-5-resend-notification-provider-migration` | Validate | 100% | 0 | Phase 1.5 Resend migration complete |
+| `014-phase-1-6-canvas-late-submission-tracking` | Specify | 0% | 0 | Ready for `/speckit.plan` |
+| `015-phase-1-7-late-submission-frequency-warning-and-digest` | Specify | 0% | 0 | Depends on 014 |
+| `016-phase-1-8-daily-heartbeat-briefing` | Specify | 0% | 0 | Ready for `/speckit.plan` |
+| `017-phase-1-9-daily-homework-snapshot` | Specify | 0% | 0 | Ready for `/speckit.plan` |
 
 ## Feature Details
 
@@ -31,13 +35,17 @@
 - **004 Batch Runner PoC**: Spec 100% | Plan 100% | Tasks 100% (8/8)
 - **005 Container CD Pipeline**: Spec 100% | Plan 100% | Tasks 100% (2/2)
 
-### Phase 1: MVP Core Academic & Attendance Sentinel (Complete)
+### Phase 1: MVP Core Academic & Attendance Sentinel
 - **006 Firestore State Persistence Engine**: Spec 100% | Plan 100% | Tasks 100% (11/11) | Implementation PASS
 - **007 Asymmetric Authority & Grace Period Engine**: Spec 100% | Plan 100% | Tasks 100% (8/8) | Implementation PASS
 - **008 Grade Velocity Drop Sentinel**: Spec 100% | Plan 100% | Tasks 100% (12/12) | Implementation PASS
 - **009 Attendance Anomaly Sentinel**: Spec 100% | Plan 100% | Tasks 100% (10/10) | Implementation PASS
 - **010 SendGrid Email Router & Integration**: Legacy Spec (Replaced by 013)
 - **013 Resend Email Provider Migration**: Spec 100% | Plan 100% | Tasks 100% (7/7) | Validation PASS
+- **014 Canvas Late Submission Tracking**: Spec 100% | Plan 0% | Tasks 0%
+- **015 Late Submission Frequency Warning & Digest**: Spec 100% | Plan 0% | Tasks 0%
+- **016 Daily Heartbeat & System Activity Briefing**: Spec 100% | Plan 0% | Tasks 0%
+- **017 Daily Evening Homework & Deadline Snapshot**: Spec 100% | Plan 0% | Tasks 0%
 
 ### Phase 2: Workload Radar & Sunday Digest (Complete)
 - **011 Workload Clumping Radar**: Spec 100% | Plan 100% | Tasks 100% (5/5) | PR #18 MERGED PASS
@@ -47,9 +55,7 @@
 
 ## Summary
 
-- **Features Fully Implemented & Merged**: 13 (Phase 0 complete + Phase 1 complete + Phase 2 complete)
-- **Features Ready for Implementation**: 0
+- **Features Fully Implemented & Merged**: 13
+- **Features Ready for Implementation / Planning**: 4 (`014`, `015`, `016`, `017`)
 - **Features Blocked**: 0
-- **Overall Project Completion**: 100.0%
-
-
+- **Overall Project Completion**: 76.5%

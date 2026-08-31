@@ -23,6 +23,9 @@ This document defines the Critical User Journeys (CUJs) for the Bellmon monitori
 | **CUJ-5** | Attendance Anomaly Detection | P0 | PowerSchool SIS | Daily 5pm Email Alert | Alert on unexcused absence (`A`) or cut (`CUT`) |
 | **CUJ-6** | Sunday Night Workload & Planning Digest | P1 | Scheduled (Sun 6pm) | HTML Email Digest | Flag $\ge 2$ major assessments within 48-hour window + Tardy summary |
 | **CUJ-7** | Automated Daily Ingestion & State Diff Sync | System | Scheduled Cron | Firestore State Update | Idempotent state diffing and ledger tracking in Cloud Firestore |
+| **CUJ-8** | Canvas Late Submission Reporting & Frequency Tracking | P1 | Canvas LMS | Sunday Digest / P1 Warning | Track `late: true` submissions in Canvas; report in Sunday Digest and trigger warning if $\ge 3$ late in 7 days |
+| **CUJ-9** | Daily Heartbeat & System Activity Briefing | P1 | Scheduled (Weekdays 5:15pm) | HTML Email Briefing | Delivers daily ingestion proof, active grace period watchlist, attendance summary, and zero-alert confirmation |
+| **CUJ-10** | Daily Evening Homework & Deadline Snapshot | P1 | Scheduled (Weekdays 7:00pm) | HTML Email Snapshot | Unified 24-48h upcoming deadline view and pending grace period submission reminders |
 
 ---
 
@@ -124,3 +127,52 @@ This document defines the Critical User Journeys (CUJs) for the Bellmon monitori
   4. Updates course grade history snapshots.
   5. Runs CUJ-1 through CUJ-6 rule evaluators.
   6. Records all dispatched email notifications in the Firestore alert ledger for idempotency.
+
+---
+
+### CUJ-8: Canvas Late Submission Reporting & Frequency Tracking
+* **Goal**: Provide visibility into assignments turned in late on Canvas (which are not flagged as late or missing in PowerSchool), helping parents monitor submission habit trends without false missing alarms.
+* **Preconditions**:
+  * Canvas submission record contains `late: true` OR `submitted_at > due_at`.
+* **User Workflow**:
+  1. System detects late digital submission during daily Canvas sync (`/api/v1/users/{id}/courses/{course_id}/assignments` or `/api/v1/students/submissions`).
+  2. System logs event in Firestore state store under `late_submissions` with assignment details (`title`, `course`, `due_at`, `submitted_at`, `minutes_late`).
+  3. **Sunday Digest Integration (Routine Summary)**:
+     * Includes a dedicated section in the CUJ-6 Sunday Night Digest listing all assignments submitted late during the preceding week.
+  4. **Frequency Threshold Warning (Optional P1 Trigger)**:
+     * If $\ge 3$ assignments are submitted late within any rolling 7-calendar-day window:
+     * System dispatches P1 Email Alert: *"Late Submission Pattern Warning: [Count] assignments submitted late in the past 7 days"*.
+
+---
+
+### CUJ-9: Daily Heartbeat & System Activity Briefing
+* **Goal**: Eliminate "silent failure" uncertainty by delivering a weekday 5:15 PM briefing that confirms successful data ingestion, active grace period timers, attendance checks, and overall sentinel standing.
+* **Preconditions**:
+  * Daily 5:00 PM ingestion job execution completes successfully.
+* **User Workflow**:
+  1. System verifies data ingestion status (`SUCCESS` for Canvas API and PowerSchool scraper).
+  2. System queries Firestore for:
+     * Active `GRACE_PERIOD` items (with calculated hours remaining before parent alert elevation).
+     * Period attendance entries for the current day.
+     * Active grade velocity standings across all courses.
+  3. System builds and dispatches the HTML Daily Heartbeat Briefing email:
+     * **Ingestion Status**: Sync timestamp and portal status indicators.
+     * **Grace Period Watchlist**: Active assignments buffering with remaining hours before P0 escalation.
+     * **Daily Attendance Result**: Period-by-period attendance log for today (e.g., 6/6 Periods Present).
+     * **Sentinel Standings**: Positive confirmation that zero P0 grade drops or unexcused absences were detected today.
+  4. Log dispatch record in Firestore alert ledger.
+
+---
+
+### CUJ-10: Daily Evening Homework & Deadline Snapshot
+* **Goal**: Provide parent and student with a focused, actionable 7:00 PM briefing of assignments due within the next 24–48 hours across Canvas and PowerSchool.
+* **Preconditions**:
+  * Weekday 7:00 PM scheduled trigger.
+* **User Workflow**:
+  1. System queries Firestore for upcoming assignments due within $[t, t+48\text{ hours}]$.
+  2. System cross-references active grace period items needing immediate student action/submission.
+  3. System builds HTML Email Snapshot containing:
+     * **Due Tomorrow & Next 48 Hours**: Formatted list of upcoming assignments by course, due date, and submission type.
+     * **Pending Submissions Reminder**: Warning for any digital assignment currently in grace period that must be turned in to avoid parent alert.
+  4. System dispatches HTML email to parent and student email addresses.
+
