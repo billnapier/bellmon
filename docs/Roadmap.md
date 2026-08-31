@@ -38,6 +38,16 @@ Focus: Eliminate false missing-assignment alarms, preserve student autonomy, cat
 * **Attendance Anomaly Sentinel (P0 Alerting)**
   * Evaluate period-level attendance data harvested from PowerSchool.
   * Dispatch urgent weekday email alerts for unexcused absences (`A`) or class cuts (`CUT`).
+* **Canvas Late Submission Reporting & Frequency Tracking (CUJ-8)**
+  * Ingest Canvas submission timestamps and `late: true` flags.
+  * Track late submission occurrences in Cloud Firestore.
+  * Report late submissions in Sunday Planning Digest and dispatch P1 warning alerts when late submissions reach frequency threshold ($\ge 3$ late assignments in 7 days).
+* **Daily Heartbeat & System Activity Briefing (CUJ-9)**
+  * Dispatch a weekday 5:15 PM HTML email briefing confirming ingestion success across portals.
+  * Display active 36-hour grace period watchlist timers, today's period attendance summary (e.g., 6/6 Periods Present), and positive confirmation of zero P0 alerts.
+* **Daily Evening Homework & Deadline Snapshot (CUJ-10)**
+  * Dispatch a weekday 7:00 PM HTML email snapshot providing a 24–48 hour forward-looking view of upcoming digital deadlines across Canvas and PowerSchool.
+  * Highlight pending grace period items needing immediate student submission.
 * **Direct Email Alerts (Resend / SMTP)**
   * Deliver urgent P0 notification payloads directly to parent/guardian email addresses.
 
