@@ -206,3 +206,256 @@ class NotificationRenderer:
 </html>
 """
         return html_body, text_fallback
+
+    def compile_heartbeat_email(self, payload: Any) -> Tuple[str, str]:
+        """
+        Compiles aggregated daily telemetry heartbeat payload into responsive HTML and plaintext email.
+
+        Args:
+            payload: HeartbeatPayload object or dict containing telemetry fields.
+
+        Returns:
+            Tuple of (html_body, text_fallback)
+        """
+        student_name = getattr(payload, "student_name", "Student")
+        date_str = getattr(payload, "date", "")
+        sync_ts = getattr(payload, "sync_timestamp", "") or date_str
+
+        # Portal Statuses
+        canvas_status = getattr(payload, "canvas_status", "OPERATIONAL")
+        powerschool_status = getattr(payload, "powerschool_status", "OPERATIONAL")
+        ingestion_list = getattr(payload, "ingestion_statuses", []) or []
+        for rec in ingestion_list:
+            pname = str(getattr(rec, "portal_name", "")).lower()
+            pstat = str(getattr(rec, "status", "OPERATIONAL"))
+            if "canvas" in pname:
+                canvas_status = pstat
+            elif "power" in pname:
+                powerschool_status = pstat
+
+        grace_watchlist = getattr(payload, "grace_watchlist", []) or []
+        attendance_sum = getattr(payload, "attendance_summary", None)
+
+        alerts_count = getattr(payload, "critical_alerts_dispatched_today", None)
+        if alerts_count is None:
+            alerts_count = getattr(payload, "alerts_dispatched_today", 0)
+
+        zero_confirmed = getattr(payload, "zero_alert_confirmed", True) and (alerts_count == 0)
+
+        # Build Plaintext Fallback
+        text_lines = [
+            "BELLMON ACADEMIC SENTINEL - DAILY HEARTBEAT & SYSTEM ACTIVITY BRIEFING",
+            f"Student: {student_name}",
+            f"Date: {date_str}",
+            "=" * 50,
+            "",
+            "SYSTEM INGESTION HEALTH:",
+            f"  - Canvas API: {canvas_status}",
+            f"  - PowerSchool Portal: {powerschool_status}",
+            "",
+            "ACTIVE GRACE PERIOD WATCHLIST:",
+        ]
+
+        if grace_watchlist:
+            for item in grace_watchlist:
+                cname = getattr(item, "course_name", None) or getattr(item, "course_id", "Course")
+                title = getattr(item, "title", "Assignment")
+                due = getattr(item, "due_at", "N/A")
+                hrs = getattr(item, "hours_remaining", 0.0)
+                text_lines.append(f"  - [{cname}] {title} (Due: {due}, {hrs:.1f} hours remaining)")
+        else:
+            text_lines.append("  No active grace period items. All digital work submitted.")
+
+        text_lines.append("")
+        text_lines.append("DAILY ATTENDANCE TELEMETRY:")
+        if attendance_sum:
+            records = getattr(attendance_sum, "records", None) or getattr(attendance_sum, "periods", []) or []
+            if records:
+                for rec in records:
+                    p = getattr(rec, "period", "?")
+                    c = getattr(rec, "course_name", "Class")
+                    st = getattr(rec, "status", None) or getattr(rec, "status_code", "P")
+                    text_lines.append(f"  - Period {p} ({c}): {st}")
+            else:
+                text_lines.append("  All period check-ins normal.")
+            anomalies = getattr(attendance_sum, "total_anomalies", 0)
+            text_lines.append(f"  Total Anomalies: {anomalies}")
+        else:
+            text_lines.append("  No attendance data recorded for today.")
+
+        text_lines.append("")
+        text_lines.append("SENTINEL STANDING:")
+        if zero_confirmed or alerts_count == 0:
+            text_lines.append("  [OK] 0 Critical Alerts Dispatched Today")
+        else:
+            text_lines.append(f"  [!] {alerts_count} Critical Alert(s) Dispatched Today")
+
+        text_lines.append("")
+        text_lines.append("Sent autonomously by Bellmon Batch Orchestrator")
+        text_fallback = "\n".join(text_lines)
+
+        # Helper for status color badges
+        def get_status_badge(status_str: str) -> str:
+            st = status_str.upper()
+            if st == "OPERATIONAL":
+                return '<span style="background: #dcfce7; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700;">OPERATIONAL</span>'
+            elif st == "DEGRADED":
+                return '<span style="background: #fef9c3; color: #854d0e; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700;">DEGRADED</span>'
+            else:
+                return '<span style="background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 700;">FAILED</span>'
+
+        # Build HTML Sections
+        canvas_badge = get_status_badge(canvas_status)
+        ps_badge = get_status_badge(powerschool_status)
+
+        # Ingestion Health Banner HTML
+        ingestion_html = f"""
+        <div style="margin-bottom: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+            <h3 style="margin: 0 0 12px 0; color: #0f172a; font-size: 15px; font-weight: 700;">
+                System Ingestion Health
+            </h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 8px 0; color: #334155; font-weight: 600;">Canvas API</td>
+                    <td style="padding: 8px 0; text-align: right;">{canvas_badge}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #334155; font-weight: 600;">PowerSchool Portal</td>
+                    <td style="padding: 8px 0; text-align: right;">{ps_badge}</td>
+                </tr>
+            </table>
+        </div>
+        """
+
+        # Grace Watchlist HTML
+        if grace_watchlist:
+            items_rows = ""
+            for item in grace_watchlist:
+                cname = escape(str(getattr(item, "course_name", None) or getattr(item, "course_id", "Course")))
+                title = escape(str(getattr(item, "title", "Assignment")))
+                due = escape(str(getattr(item, "due_at", "N/A")))
+                hrs = getattr(item, "hours_remaining", 0.0)
+                items_rows += f"""
+                <tr style="border-bottom: 1px solid #fef3c7;">
+                    <td style="padding: 10px 0; color: #92400e; font-weight: 600;">{cname}</td>
+                    <td style="padding: 10px 0; color: #1e293b;">{title}</td>
+                    <td style="padding: 10px 0; color: #451a03; font-size: 13px;">{due}</td>
+                    <td style="padding: 10px 0; color: #d97706; font-weight: 700; text-align: right;">{hrs:.1f} hours remaining</td>
+                </tr>
+                """
+            watchlist_html = f"""
+            <div style="margin-bottom: 24px; background: #fffbeb; border: 1px solid #fde68a; border-left: 5px solid #f59e0b; border-radius: 8px; padding: 16px;">
+                <h3 style="margin: 0 0 12px 0; color: #92400e; font-size: 15px; font-weight: 700;">
+                    Grace Period Watchlist ({len(grace_watchlist)})
+                </h3>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    {items_rows}
+                </table>
+            </div>
+            """
+        else:
+            watchlist_html = """
+            <div style="margin-bottom: 24px; background: #f0fdf4; border: 1px solid #bbf7d0; border-left: 5px solid #22c55e; border-radius: 8px; padding: 16px;">
+                <h3 style="margin: 0 0 4px 0; color: #166534; font-size: 15px; font-weight: 700;">Grace Period Watchlist</h3>
+                <p style="margin: 0; color: #15803d; font-size: 14px;">No active grace period items. All digital work submitted.</p>
+            </div>
+            """
+
+        # Daily Attendance HTML
+        if attendance_sum:
+            records = getattr(attendance_sum, "records", None) or getattr(attendance_sum, "periods", []) or []
+            if records:
+                att_rows = ""
+                for rec in records:
+                    p = escape(str(getattr(rec, "period", "?")))
+                    c = escape(str(getattr(rec, "course_name", "Class")))
+                    st = escape(str(getattr(rec, "status", None) or getattr(rec, "status_code", "P")))
+                    att_rows += f"""
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 8px 0; color: #334155; font-weight: 600;">Period {p} ({c})</td>
+                        <td style="padding: 8px 0; text-align: right; color: #0f172a; font-weight: 600;">{st}</td>
+                    </tr>
+                    """
+                att_table = f'<table style="width: 100%; border-collapse: collapse; font-size: 14px;">{att_rows}</table>'
+            else:
+                att_table = '<p style="margin: 0; color: #475569; font-size: 14px;">All period check-ins normal.</p>'
+            anomalies = getattr(attendance_sum, "total_anomalies", 0)
+            anom_str = f'<div style="margin-top: 8px; font-size: 12px; color: #64748b;">Total Anomalies: {anomalies}</div>'
+            attendance_html = f"""
+            <div style="margin-bottom: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+                <h3 style="margin: 0 0 12px 0; color: #0f172a; font-size: 15px; font-weight: 700;">Daily Attendance Summary</h3>
+                {att_table}
+                {anom_str}
+            </div>
+            """
+        else:
+            attendance_html = """
+            <div style="margin-bottom: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+                <h3 style="margin: 0 0 4px 0; color: #0f172a; font-size: 15px; font-weight: 700;">Daily Attendance Summary</h3>
+                <p style="margin: 0; color: #64748b; font-size: 14px;">No attendance data recorded for today.</p>
+            </div>
+            """
+
+        # Sentinel Standing HTML Badge
+        if zero_confirmed or alerts_count == 0:
+            standing_html = """
+            <div style="margin-bottom: 24px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px; text-align: center;">
+                <span style="background: #22c55e; color: #ffffff; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 700;">ZERO Critical Alerts Dispatched Today</span>
+                <p style="margin: 8px 0 0 0; color: #166534; font-size: 13px;">Academic Sentinel Standing: CLEAR</p>
+            </div>
+            """
+        else:
+            standing_html = f"""
+            <div style="margin-bottom: 24px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; text-align: center;">
+                <span style="background: #ef4444; color: #ffffff; padding: 4px 12px; border-radius: 9999px; font-size: 13px; font-weight: 700;">{alerts_count} Critical Alert(s) Dispatched Today</span>
+                <p style="margin: 8px 0 0 0; color: #991b1b; font-size: 13px;">Academic Sentinel Standing: ACTION REQUIRED</p>
+            </div>
+            """
+
+        html_body = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bellmon Daily Heartbeat Briefing</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f8fafc; padding: 20px 0;">
+        <tr>
+            <td align="center">
+                <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); margin: 20px auto;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #0f172a; padding: 24px 32px; text-align: left;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 700; letter-spacing: -0.5px;">Bellmon Academic Sentinel</h1>
+                            <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 13px;">Daily System Activity &amp; Telemetry Briefing ({escape(date_str)})</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content Body -->
+                    <tr>
+                        <td style="padding: 32px;">
+                            <h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 18px; font-weight: 600;">Daily Briefing for <span style="color: #2563eb;">{escape(student_name)}</span></h2>
+                            
+                            {ingestion_html}
+                            {watchlist_html}
+                            {attendance_html}
+                            {standing_html}
+                            
+                            <!-- Footer -->
+                            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0; text-align: center;">
+                                <p style="margin: 0; color: #94a3b8; font-size: 11px;">
+                                    Sent autonomously by Bellmon Batch Orchestrator
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+        return html_body, text_fallback
+

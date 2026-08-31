@@ -109,3 +109,14 @@ class StudentState(BaseModel):
     attendance_events: List[AttendanceEvent] = Field(default_factory=list)
 
 
+class HeartbeatDispatchRecord(BaseModel):
+    """Firestore record for tracking sent heartbeat briefings."""
+    id: str
+    student_name: str
+    date: str
+    dispatched_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    recipient: str
+    message_id: Optional[str] = None
+    status: str = "SUCCESS"
+
+

@@ -14,6 +14,14 @@ from src.notifications.digest import (
     SundayDigestRenderer,
     SundayDigestRouter,
 )
+from src.notifications.heartbeat import HeartbeatBriefingGenerator
+from src.notifications.models import (
+    HeartbeatPayload,
+    GraceWatchlistItem,
+    PortalIngestionRecord,
+    DailyAttendanceSummary,
+    AttendancePeriodRecord,
+)
 
 __all__ = [
     "EmailPayload",
@@ -24,5 +32,11 @@ __all__ = [
     "SundayDigestPayload",
     "SundayDigestRenderer",
     "SundayDigestRouter",
+    "HeartbeatBriefingGenerator",
+    "HeartbeatPayload",
+    "GraceWatchlistItem",
+    "PortalIngestionRecord",
+    "DailyAttendanceSummary",
+    "AttendancePeriodRecord",
 ]
 
