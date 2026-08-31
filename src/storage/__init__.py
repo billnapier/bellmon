@@ -10,6 +10,7 @@ from src.storage.models import (
     TrackedAssignment,
     AttendanceEvent,
     SessionCookies,
+    LateSubmissionRecord,
 )
 from src.storage.firestore import FirestoreStateEngine, MockFirestoreClient
 
@@ -22,4 +23,5 @@ __all__ = [
     "TrackedAssignment",
     "AttendanceEvent",
     "SessionCookies",
+    "LateSubmissionRecord",
 ]

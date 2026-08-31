@@ -73,6 +73,21 @@ class SessionCookies(BaseModel):
     updated_at: str  # ISO format string
 
 
+class LateSubmissionRecord(BaseModel):
+    """Record of a Canvas assignment submitted late."""
+    assignment_id: str
+    course_id: str
+    course_name: str = ""
+    title: str
+    due_at: Optional[str] = None  # ISO format string
+    submitted_at: Optional[str] = None  # ISO format string
+    minutes_late: int = 0
+    detected_at: str = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+    is_late: bool = True
+
+
 class StudentState(BaseModel):
     """Master document structure stored at students/{student_id} in Firestore."""
     student_id: str
@@ -83,3 +98,4 @@ class StudentState(BaseModel):
     courses: Dict[str, CourseState] = Field(default_factory=dict)
     tracked_assignments: Dict[str, TrackedAssignment] = Field(default_factory=dict)
     attendance_events: List[AttendanceEvent] = Field(default_factory=list)
+
