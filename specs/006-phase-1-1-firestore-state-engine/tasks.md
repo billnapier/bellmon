@@ -16,7 +16,7 @@
 
 **Purpose**: Storage module initialization and structure
 
-- [ ] T001 Initialize storage package structure in `src/storage/__init__.py`
+- [x] T001 Initialize storage package structure in `src/storage/__init__.py`
 
 ---
 
@@ -26,7 +26,7 @@
 
 **⚠️ CRITICAL**: No user story storage operations can be implemented until data models are defined.
 
-- [ ] T002 Define Pydantic v2 state models (`GradeSnapshot`, `CourseState`, `TrackedAssignment`, `AttendanceEvent`, `SessionCookies`, `StudentState`) in `src/storage/models.py`
+- [x] T002 Define Pydantic v2 state models (`GradeSnapshot`, `CourseState`, `TrackedAssignment`, `AttendanceEvent`, `SessionCookies`, `StudentState`) in `src/storage/models.py`
 
 **Checkpoint**: Foundation ready — user story implementation can begin.
 
@@ -40,9 +40,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T003 [P] [US1] Implement `MockFirestoreClient` in-memory document/collection reference simulator in `src/storage/firestore.py`
-- [ ] T004 [US1] Implement `FirestoreStateEngine` class with `get_student_state` and `update_student_state` methods in `src/storage/firestore.py`
-- [ ] T005 [P] [US1] Write unit tests for student state document read/write and default initialization in `tests/test_firestore.py`
+- [x] T003 [P] [US1] Implement `MockFirestoreClient` in-memory document/collection reference simulator in `src/storage/firestore.py`
+- [x] T004 [US1] Implement `FirestoreStateEngine` class with `get_student_state` and `update_student_state` methods in `src/storage/firestore.py`
+- [x] T005 [P] [US1] Write unit tests for student state document read/write and default initialization in `tests/test_firestore.py`
 
 **Checkpoint**: User Story 1 complete and independently testable via pytest.
 
@@ -56,8 +56,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T006 [US2] Implement `append_grade_snapshot` and `get_grade_history` methods in `FirestoreStateEngine` (`src/storage/firestore.py`)
-- [ ] T007 [P] [US2] Write unit tests for grade history snapshot appending and date window queries in `tests/test_firestore.py`
+- [x] T006 [US2] Implement `append_grade_snapshot` and `get_grade_history` methods in `FirestoreStateEngine` (`src/storage/firestore.py`)
+- [x] T007 [P] [US2] Write unit tests for grade history snapshot appending and date window queries in `tests/test_firestore.py`
 
 **Checkpoint**: User Story 2 complete and independently testable via pytest.
 
@@ -71,8 +71,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T008 [US3] Implement `save_session_cookies` and `get_session_cookies` methods in `FirestoreStateEngine` (`src/storage/firestore.py`)
-- [ ] T009 [P] [US3] Write unit tests for session cookie persistence and retrieval in `tests/test_firestore.py`
+- [x] T008 [US3] Implement `save_session_cookies` and `get_session_cookies` methods in `FirestoreStateEngine` (`src/storage/firestore.py`)
+- [x] T009 [P] [US3] Write unit tests for session cookie persistence and retrieval in `tests/test_firestore.py`
 
 **Checkpoint**: All user stories complete and independently functional.
 
@@ -82,8 +82,8 @@
 
 **Purpose**: Package exports, integration verification, and execution validation
 
-- [ ] T010 Export `FirestoreStateEngine` and data models from `src/storage/__init__.py`
-- [ ] T011 [P] Verify execution of tests and quickstart guide in `specs/006-phase-1-1-firestore-state-engine/quickstart.md`
+- [x] T010 Export `FirestoreStateEngine` and data models from `src/storage/__init__.py`
+- [x] T011 [P] Verify execution of tests and quickstart guide in `specs/006-phase-1-1-firestore-state-engine/quickstart.md`
 
 ---
 
