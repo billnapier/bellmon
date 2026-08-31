@@ -21,8 +21,8 @@
 | `011-phase-2-1-workload-clumping-radar` | Validate | 100% | 0 | Phase 2.1 complete & merged (PR #18) |
 | `012-phase-2-2-sunday-planning-digest` | Validate | 100% | 0 | Phase 2.2 complete |
 | `013-phase-1-5-resend-notification-provider-migration` | Validate | 100% | 0 | Phase 1.5 Resend migration complete |
-| `014-phase-1-6-canvas-late-submission-tracking` | Specify | 0% | 0 | Ready for `/speckit.plan` |
-| `015-phase-1-7-late-submission-frequency-warning-and-digest` | Specify | 0% | 0 | Depends on 014 |
+| `014-phase-1-6-canvas-late-submission-tracking` | Complete | 100% | 0 | Phase 1.6 complete & merged (PR #23) |
+| `015-phase-1-7-late-submission-frequency-warning-and-digest` | Complete | 100% | 0 | Phase 1.7 complete |
 | `016-phase-1-8-daily-heartbeat-briefing` | Specify | 0% | 0 | Ready for `/speckit.plan` |
 | `017-phase-1-9-daily-homework-snapshot` | Specify | 0% | 0 | Ready for `/speckit.plan` |
 

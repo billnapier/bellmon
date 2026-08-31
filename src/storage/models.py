@@ -88,6 +88,15 @@ class LateSubmissionRecord(BaseModel):
     is_late: bool = True
 
 
+class DispatchedAlertRecord(BaseModel):
+    """Ledger record for dispatched notifications/alerts."""
+    alert_id: str
+    alert_type: str  # e.g., "LATE_SUBMISSION_FREQUENCY_WARNING", "ATTENDANCE_P0"
+    student_id: str
+    dispatched_at: str  # ISO 8601 string
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
 class StudentState(BaseModel):
     """Master document structure stored at students/{student_id} in Firestore."""
     student_id: str
@@ -98,4 +107,5 @@ class StudentState(BaseModel):
     courses: Dict[str, CourseState] = Field(default_factory=dict)
     tracked_assignments: Dict[str, TrackedAssignment] = Field(default_factory=dict)
     attendance_events: List[AttendanceEvent] = Field(default_factory=list)
+
 

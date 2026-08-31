@@ -5,7 +5,7 @@ Data models and Enums for the Asymmetric System Authority Engine.
 from enum import Enum
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from src.storage.models import GradeSnapshot, AttendanceCodeSeverity, AttendanceEvent
+from src.storage.models import GradeSnapshot, AttendanceCodeSeverity, AttendanceEvent, LateSubmissionRecord
 
 
 class AssignmentStatus(str, Enum):
@@ -102,5 +102,15 @@ class PendingAttendanceAlert(BaseModel):
     description: str
     severity: AttendanceCodeSeverity = AttendanceCodeSeverity.P0_URGENT
     detected_at: str      # ISO timestamp
+
+
+class LateSubmissionPatternAlert(BaseModel):
+    """P1 Warning alert payload when late submission frequency threshold is exceeded."""
+    student_id: str
+    count_in_window: int
+    qualifying_records: List[LateSubmissionRecord] = Field(default_factory=list)
+    detected_at: str      # ISO timestamp
+    severity: str = "P1_WARNING"
+
 
 

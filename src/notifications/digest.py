@@ -18,6 +18,9 @@ class SundayDigestPayload(BaseModel):
     attendance_records: List[Dict[str, Any]] = Field(default_factory=list)
     tardy_count: int = 0
     unverified_count: int = 0
+    late_submissions: List[Dict[str, Any]] = Field(default_factory=list)
+    late_count: int = 0
+    has_late_warning: bool = False
 
 
 class SundayDigestRenderer:
@@ -44,6 +47,16 @@ class SundayDigestRenderer:
             <div style="margin-bottom:24px;">
                 <h3 style="color:#d9534f; margin-bottom:8px;">⚠️ Workload Clumping Radar Alert</h3>
                 {cluster_items_html}
+            </div>
+            """
+
+        # Chronic Late Submission Warning Banner
+        late_warning_html = ""
+        if payload.has_late_warning:
+            late_warning_html = f"""
+            <div style="margin-bottom:24px; background:#f8d7da; border-left:4px solid #dc3545; padding:12px; border-radius:4px;">
+                <h3 style="color:#721c24; margin:0 0 4px 0; font-size:16px;">⚠️ CHRONIC LATE SUBMISSION WARNING</h3>
+                <p style="color:#721c24; margin:0;">Student submitted {payload.late_count} assignments late in the past 7 days.</p>
             </div>
             """
 
@@ -111,6 +124,46 @@ class SundayDigestRenderer:
         </div>
         """
 
+        # Section 5: Late Submission Summary
+        late_rows = ""
+        for rec in payload.late_submissions:
+            c_name = rec.get("course_name") or rec.get("course_id") or "Unknown"
+            title = rec.get("assignment_name") or rec.get("title") or "Untitled"
+            mins = rec.get("minutes_late", 0)
+            sub_at = rec.get("submitted_at") or rec.get("detected_at") or "N/A"
+            late_rows += f"""
+            <tr>
+                <td style="padding:8px; border-bottom:1px solid #eee;"><strong>{c_name}</strong></td>
+                <td style="padding:8px; border-bottom:1px solid #eee;">{title}</td>
+                <td style="padding:8px; border-bottom:1px solid #eee;">{mins} mins</td>
+                <td style="padding:8px; border-bottom:1px solid #eee; color:#666;">{sub_at}</td>
+            </tr>
+            """
+
+        late_table_html = f"""
+        <table style="width:100%; border-collapse:collapse; text-align:left;">
+            <thead>
+                <tr style="background:#f4f6f8;">
+                    <th style="padding:8px; border-bottom:2px solid #ddd;">Course</th>
+                    <th style="padding:8px; border-bottom:2px solid #ddd;">Assignment Title</th>
+                    <th style="padding:8px; border-bottom:2px solid #ddd;">Minutes Late</th>
+                    <th style="padding:8px; border-bottom:2px solid #ddd;">Submitted At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {late_rows}
+            </tbody>
+        </table>
+        """ if payload.late_submissions else '<p style="color:#666; margin:0;">No late submissions recorded in the past 7 days.</p>'
+
+        late_summary_html = f"""
+        <div style="margin-bottom:24px;">
+            <h3 style="color:#2b3a4a; margin-bottom:8px;">⏰ Late Submission Summary (Past 7 Days)</h3>
+            <p style="margin:4px 0 8px 0; color:#4b5563;">Total late submissions logged: <strong>{payload.late_count}</strong></p>
+            {late_table_html}
+        </div>
+        """
+
         html = f"""<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"/><title>Bellmon Sunday Planning Digest</title></head>
@@ -121,9 +174,11 @@ class SundayDigestRenderer:
             <p style="color:#6b7280; margin:4px 0 0 0;">Student: <strong>{payload.student_name}</strong> | Date: {date_str}</p>
         </div>
         {radar_html}
+        {late_warning_html}
         {standings_html}
         {deadlines_html}
         {attendance_html}
+        {late_summary_html}
         <div style="border-top:1px solid #e5e7eb; padding-top:12px; font-size:12px; color:#9ca3af; text-align:center;">
             Bellmon Sentinel Academic & Attendance System &bull; Generated Automatically
         </div>
@@ -148,6 +203,10 @@ class SundayDigestRenderer:
                 lines.append(f"- Spike on {cluster.start_time.strftime('%a %b %d')}: {cluster.total_major_items} major items in {', '.join(cluster.courses)}")
             lines.append("")
 
+        if payload.has_late_warning:
+            lines.append(f"*** CHRONIC LATE SUBMISSION WARNING: Student submitted {payload.late_count} assignments late in the past 7 days. ***")
+            lines.append("")
+
         lines.append("CURRENT ACADEMIC STANDINGS:")
         for c in payload.course_standings:
             lines.append(f"- {c.get('course_name')}: {c.get('grade_letter')} ({c.get('grade_percent')}%) - Teacher: {c.get('teacher_name')}")
@@ -165,8 +224,23 @@ class SundayDigestRenderer:
         lines.append(f"- Tardies (past 7 days): {payload.tardy_count}")
         lines.append(f"- Unverified Absences (past 7 days): {payload.unverified_count}")
         lines.append("")
+
+        lines.append("LATE SUBMISSION SUMMARY (PAST 7 DAYS):")
+        lines.append(f"- Total late submissions: {payload.late_count}")
+        if payload.late_submissions:
+            for rec in payload.late_submissions:
+                c_name = rec.get("course_name") or rec.get("course_id") or "Unknown"
+                title = rec.get("assignment_name") or rec.get("title") or "Untitled"
+                mins = rec.get("minutes_late", 0)
+                sub_at = rec.get("submitted_at") or rec.get("detected_at") or "N/A"
+                lines.append(f"  * {c_name} - {title}: {mins} mins late (Submitted: {sub_at})")
+        else:
+            lines.append("- No late submissions recorded in the past 7 days.")
+        lines.append("")
+
         lines.append("==================================================")
         return "\n".join(lines)
+
 
 
 class SundayDigestRouter:

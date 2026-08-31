@@ -15,6 +15,7 @@ from src.storage.models import (
     TrackedAssignment,
     AttendanceEvent,
     LateSubmissionRecord,
+    DispatchedAlertRecord,
 )
 
 
@@ -288,4 +289,50 @@ class FirestoreStateEngine:
 
         records.sort(key=lambda r: r.submitted_at or r.detected_at or "")
         return records
+
+    def save_dispatched_alert(
+        self, student_id: str, record: DispatchedAlertRecord
+    ) -> None:
+        """
+        Idempotently save a DispatchedAlertRecord under `students/{student_id}/dispatched_alerts/{alert_id}`.
+        """
+        col_ref = self.client.collection(f"students/{student_id}/dispatched_alerts")
+        doc_ref = col_ref.document(str(record.alert_id))
+        doc_ref.set(record.model_dump(mode="json"), merge=True)
+
+    def get_dispatched_alerts(
+        self,
+        student_id: str,
+        alert_type: Optional[str] = None,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+    ) -> List[DispatchedAlertRecord]:
+        """
+        Retrieve list of DispatchedAlertRecords for a student.
+        Optionally filter by alert_type and [start_date, end_date] range on dispatched_at timestamp.
+        """
+        col_ref = self.client.collection(f"students/{student_id}/dispatched_alerts")
+        docs = col_ref.stream()
+        records: List[DispatchedAlertRecord] = []
+        for doc in docs:
+            if not doc.exists or not doc.to_dict():
+                continue
+            data = doc.to_dict()
+            rec = DispatchedAlertRecord.model_validate(data)
+
+            if alert_type and rec.alert_type != alert_type:
+                continue
+
+            dispatch_str = rec.dispatched_at
+            rec_date = dispatch_str[:10] if dispatch_str else ""
+
+            if start_date and rec_date and rec_date < start_date[:10]:
+                continue
+            if end_date and rec_date and rec_date > end_date[:10]:
+                continue
+            records.append(rec)
+
+        records.sort(key=lambda r: r.dispatched_at or "")
+        return records
+
 
