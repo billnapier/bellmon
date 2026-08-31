@@ -14,6 +14,7 @@ from src.storage.models import (
     SessionCookies,
     TrackedAssignment,
     AttendanceEvent,
+    LateSubmissionRecord,
 )
 
 
@@ -31,9 +32,17 @@ class MockDocumentSnapshot:
 class MockDocumentRef:
     """Mock representation of a Firestore DocumentReference."""
 
-    def __init__(self, store: Dict[str, Dict[str, Any]], doc_id: str):
+    def __init__(
+        self,
+        store: Dict[str, Dict[str, Any]],
+        doc_id: str,
+        client: Optional["MockFirestoreClient"] = None,
+        path: str = "",
+    ):
         self._store = store
         self._doc_id = doc_id
+        self._client = client
+        self._path = path
 
     def get(self) -> MockDocumentSnapshot:
         if self._doc_id in self._store:
@@ -64,6 +73,12 @@ class MockDocumentRef:
                 d = d[part]
             d[parts[-1]] = value
 
+    def collection(self, collection_name: str) -> "MockCollectionRef":
+        sub_path = f"{self._path}/{collection_name}" if self._path else collection_name
+        if self._client:
+            return self._client.collection(sub_path)
+        raise ValueError("MockDocumentRef not initialized with client reference")
+
     def _deep_merge(self, base: Dict[str, Any], update: Dict[str, Any]) -> Dict[str, Any]:
         res = dict(base)
         for k, v in update.items():
@@ -77,11 +92,25 @@ class MockDocumentRef:
 class MockCollectionRef:
     """Mock representation of a Firestore CollectionReference."""
 
-    def __init__(self, store: Dict[str, Dict[str, Any]]):
+    def __init__(
+        self,
+        store: Dict[str, Dict[str, Any]],
+        client: Optional["MockFirestoreClient"] = None,
+        path: str = "",
+    ):
         self._store = store
+        self._client = client
+        self._path = path
 
     def document(self, document_id: str) -> MockDocumentRef:
-        return MockDocumentRef(self._store, document_id)
+        doc_path = f"{self._path}/{document_id}" if self._path else document_id
+        return MockDocumentRef(self._store, document_id, client=self._client, path=doc_path)
+
+    def stream(self) -> List[MockDocumentSnapshot]:
+        return [
+            MockDocumentSnapshot(dict(data), exists=True)
+            for doc_id, data in self._store.items()
+        ]
 
 
 class MockFirestoreClient:
@@ -94,7 +123,10 @@ class MockFirestoreClient:
     def collection(self, collection_name: str) -> MockCollectionRef:
         if collection_name not in self._collections:
             self._collections[collection_name] = {}
-        return MockCollectionRef(self._collections[collection_name])
+        return MockCollectionRef(
+            self._collections[collection_name], client=self, path=collection_name
+        )
+
 
 
 class FirestoreStateEngine:
@@ -102,9 +134,11 @@ class FirestoreStateEngine:
     Persistence engine wrapping GCP Cloud Firestore for managing student academic state.
     """
 
-    def __init__(self, use_mock: bool = False, project_id: Optional[str] = None):
+    def __init__(self, use_mock: bool = False, project_id: Optional[str] = None, client: Optional[Any] = None):
         self.use_mock = use_mock
-        if use_mock:
+        if client is not None:
+            self.client = client
+        elif use_mock:
             self.client = MockFirestoreClient()
         else:
             try:
@@ -201,3 +235,57 @@ class FirestoreStateEngine:
         """
         state = self.get_student_state(student_id)
         return state.session_cookies
+
+    def save_late_submission(self, student_id: str, record: LateSubmissionRecord) -> None:
+        """
+        Idempotently save or update a LateSubmissionRecord under `students/{student_id}/late_submissions/{assignment_id}`.
+        """
+        col_ref = self.client.collection(f"students/{student_id}/late_submissions")
+        doc_ref = col_ref.document(str(record.assignment_id))
+        doc_ref.set(record.model_dump(mode="json"), merge=True)
+
+    def save_late_submissions(
+        self, student_id: str, records: List[LateSubmissionRecord]
+    ) -> None:
+        """
+        Save or update multiple LateSubmissionRecord objects.
+        """
+        for record in records:
+            self.save_late_submission(student_id, record)
+
+    def get_late_submissions(
+        self,
+        student_id: str,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        include_cleared: bool = False,
+    ) -> List[LateSubmissionRecord]:
+        """
+        Retrieve list of LateSubmissionRecords for a student within [start_date, end_date] inclusive.
+        Filters based on submitted_at or detected_at timestamps.
+        By default, filters out records where is_late is False unless include_cleared is True.
+        """
+        col_ref = self.client.collection(f"students/{student_id}/late_submissions")
+        docs = col_ref.stream()
+        records: List[LateSubmissionRecord] = []
+        for doc in docs:
+            if not doc.exists or not doc.to_dict():
+                continue
+            data = doc.to_dict()
+            rec = LateSubmissionRecord.model_validate(data)
+            
+            if not rec.is_late and not include_cleared:
+                continue
+
+            timestamp_str = rec.submitted_at or rec.detected_at
+            rec_date = timestamp_str[:10] if timestamp_str else ""
+
+            if start_date and rec_date and rec_date < start_date[:10]:
+                continue
+            if end_date and rec_date and rec_date > end_date[:10]:
+                continue
+            records.append(rec)
+
+        records.sort(key=lambda r: r.submitted_at or r.detected_at or "")
+        return records
+
