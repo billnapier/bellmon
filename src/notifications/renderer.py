@@ -459,3 +459,223 @@ class NotificationRenderer:
 """
         return html_body, text_fallback
 
+    def compile_homework_snapshot_email(self, payload: Any) -> Tuple[str, str]:
+        """
+        Renders responsive HTML email body and plaintext fallback for daily homework snapshot.
+
+        Args:
+            payload: HomeworkSnapshotPayload or object containing snapshot telemetry.
+
+        Returns:
+            Tuple of (html_body, text_fallback)
+        """
+        student_name = getattr(payload, "student_name", "Student")
+        generated_at = getattr(payload, "generated_at", "")
+        grace_items = getattr(payload, "grace_period_items", []) or []
+        upcoming_items = getattr(payload, "upcoming_deadlines", []) or []
+        completed_items = getattr(payload, "recently_completed", []) or []
+
+        date_display = generated_at[:10] if generated_at else ""
+
+        # --- Text Fallback ---
+        text_lines = [
+            f"BELLMON HOMEWORK SNAPSHOT - {student_name.upper()}",
+            f"Generated: {generated_at}",
+            "=" * 50,
+        ]
+
+        if grace_items:
+            text_lines.append("\n!!! URGENT: PENDING GRACE PERIOD ITEMS !!!")
+            for item in grace_items:
+                title = getattr(item, "title", "Assignment")
+                course = getattr(item, "course", "Course")
+                due = getattr(item, "original_due_at", "")
+                rem = getattr(item, "hours_remaining", 0.0)
+                text_lines.append(f" - [GRACE PERIOD] {title} ({course}) | Due: {due} | Hours Left: {rem}h")
+
+        text_lines.append(f"\nUPCOMING DEADLINES (NEXT 48 HOURS) [{len(upcoming_items)}]:")
+        if not upcoming_items:
+            text_lines.append(" - No upcoming deadlines within next 48 hours.")
+        else:
+            for item in upcoming_items:
+                title = getattr(item, "title", "Assignment")
+                course = getattr(item, "course", "Course")
+                due = getattr(item, "due_at", "")
+                sub = "Submitted" if getattr(item, "submitted", False) else "NOT SUBMITTED"
+                text_lines.append(f" - {title} ({course}) | Due: {due} | Status: {sub}")
+
+        text_lines.append(f"\nRECENTLY COMPLETED (PAST 24 HOURS) [{len(completed_items)}]:")
+        if not completed_items:
+            text_lines.append(" - No assignments completed in past 24 hours.")
+        else:
+            for item in completed_items:
+                title = getattr(item, "title", "Assignment")
+                course = getattr(item, "course", "Course")
+                sub_at = getattr(item, "submitted_at", "")
+                text_lines.append(f" - [COMPLETED] {title} ({course}) | Submitted At: {sub_at}")
+
+        text_lines.append("\n" + "=" * 50)
+        text_lines.append("Sent autonomously by Bellmon Batch Orchestrator")
+        text_fallback = "\n".join(text_lines)
+
+        # --- HTML Body Compilation ---
+        # 1. Grace Period Red Alert Section
+        grace_html = ""
+        if grace_items:
+            cards = ""
+            for item in grace_items:
+                title = escape(str(getattr(item, "title", "Assignment")))
+                course = escape(str(getattr(item, "course", "Course")))
+                due = escape(str(getattr(item, "original_due_at", "")))
+                rem = escape(str(getattr(item, "hours_remaining", 0.0)))
+                sub_url = getattr(item, "submission_url", None)
+                url_btn = (
+                    f'<a href="{escape(sub_url)}" style="display: inline-block; margin-top: 8px; background: #dc2626; color: #ffffff; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: 600;">Submit Assignment &rarr;</a>'
+                    if sub_url
+                    else ""
+                )
+
+                cards += f"""
+                <div style="background: #ffffff; border-left: 4px solid #ef4444; border-radius: 6px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <span style="font-size: 11px; font-weight: 700; color: #991b1b; text-transform: uppercase;">{course}</span>
+                            <h4 style="margin: 2px 0 4px 0; font-size: 15px; color: #0f172a;">{title}</h4>
+                            <p style="margin: 0; font-size: 12px; color: #64748b;">Original Due Date: {due}</p>
+                        </div>
+                        <span style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 9999px;">{rem}h Left</span>
+                    </div>
+                    {url_btn}
+                </div>
+                """
+            grace_html = f"""
+            <div style="margin-bottom: 24px; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 8px; padding: 16px;">
+                <h3 style="margin: 0 0 12px 0; color: #9f1239; font-size: 15px; font-weight: 700; display: flex; align-items: center;">
+                    🚨 Pending Grace Period Action Required ({len(grace_items)})
+                </h3>
+                <p style="margin: 0 0 12px 0; color: #be123c; font-size: 13px;">
+                    The following digital missing items are within their active grace period window. Immediate submission is required to prevent P0 escalation.
+                </p>
+                {cards}
+            </div>
+            """
+
+        # 2. Upcoming Deadlines (Next 48 Hours)
+        if not upcoming_items:
+            upcoming_html = """
+            <div style="margin-bottom: 24px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; text-align: center;">
+                <p style="margin: 0; color: #64748b; font-size: 13px;">No upcoming deadlines scheduled in the next 48 hours.</p>
+            </div>
+            """
+        else:
+            cards = ""
+            for item in upcoming_items:
+                title = escape(str(getattr(item, "title", "Assignment")))
+                course = escape(str(getattr(item, "course", "Course")))
+                due = escape(str(getattr(item, "due_at", "")))
+                portal = escape(str(getattr(item, "portal", "Canvas")))
+                submitted = getattr(item, "submitted", False)
+                sub_badge = (
+                    '<span style="background: #dcfce7; color: #15803d; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 9999px;">✓ Submitted</span>'
+                    if submitted
+                    else '<span style="background: #fff7ed; color: #c2410c; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 9999px;">Pending</span>'
+                )
+
+                cards += f"""
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; margin-bottom: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <span style="font-size: 11px; font-weight: 600; color: #2563eb; text-transform: uppercase;">{course} • {portal}</span>
+                            <h4 style="margin: 2px 0 4px 0; font-size: 14px; color: #0f172a;">{title}</h4>
+                            <p style="margin: 0; font-size: 12px; color: #64748b;">Due: {due}</p>
+                        </div>
+                        {sub_badge}
+                    </div>
+                </div>
+                """
+            upcoming_html = f"""
+            <div style="margin-bottom: 24px;">
+                <h3 style="margin: 0 0 12px 0; color: #0f172a; font-size: 16px; font-weight: 600;">
+                    📅 Due Tomorrow &amp; Next 48 Hours ({len(upcoming_items)})
+                </h3>
+                {cards}
+            </div>
+            """
+
+        # 3. Recently Completed (Past 24 Hours)
+        if not completed_items:
+            completed_html = """
+            <div style="margin-bottom: 24px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 16px; text-align: center;">
+                <p style="margin: 0; color: #64748b; font-size: 13px;">No completed assignments recorded in the past 24 hours.</p>
+            </div>
+            """
+        else:
+            cards = ""
+            for item in completed_items:
+                title = escape(str(getattr(item, "title", "Assignment")))
+                course = escape(str(getattr(item, "course", "Course")))
+                sub_at = escape(str(getattr(item, "submitted_at", "")))
+
+                cards += f"""
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 10px; margin-bottom: 8px;">
+                    <span style="font-size: 11px; font-weight: 600; color: #166534;">{course}</span>
+                    <p style="margin: 2px 0 0 0; font-size: 13px; font-weight: 600; color: #14532d;">✓ {title}</p>
+                    <span style="font-size: 11px; color: #15803d;">Submitted: {sub_at}</span>
+                </div>
+                """
+            completed_html = f"""
+            <div style="margin-bottom: 24px;">
+                <h3 style="margin: 0 0 12px 0; color: #0f172a; font-size: 16px; font-weight: 600;">
+                    🎉 Recently Completed Work (Past 24h) ({len(completed_items)})
+                </h3>
+                {cards}
+            </div>
+            """
+
+        html_body = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bellmon Evening Homework &amp; Deadline Snapshot</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse; background-color: #f8fafc; padding: 20px 0;">
+        <tr>
+            <td align="center">
+                <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); margin: 20px auto;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color: #0f172a; padding: 24px 32px; text-align: left;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 20px; font-weight: 700; letter-spacing: -0.5px;">Bellmon Academic Sentinel</h1>
+                            <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 13px;">Daily Evening Homework &amp; Deadline Snapshot ({escape(date_display)})</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content Body -->
+                    <tr>
+                        <td style="padding: 32px;">
+                            <h2 style="margin: 0 0 20px 0; color: #0f172a; font-size: 18px; font-weight: 600;">Evening Briefing for <span style="color: #2563eb;">{escape(student_name)}</span></h2>
+                            
+                            {grace_html}
+                            {upcoming_html}
+                            {completed_html}
+                            
+                            <!-- Footer -->
+                            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid #e2e8f0; text-align: center;">
+                                <p style="margin: 0; color: #94a3b8; font-size: 11px;">
+                                    Sent autonomously by Bellmon Batch Orchestrator
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+"""
+        return html_body, text_fallback
+
+

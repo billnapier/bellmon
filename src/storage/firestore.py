@@ -135,10 +135,11 @@ class FirestoreStateEngine:
     Persistence engine wrapping GCP Cloud Firestore for managing student academic state.
     """
 
-    def __init__(self, use_mock: bool = False, project_id: Optional[str] = None, client: Optional[Any] = None):
+    def __init__(self, use_mock: bool = False, project_id: Optional[str] = None, client: Optional[Any] = None, db_client: Optional[Any] = None):
         self.use_mock = use_mock
-        if client is not None:
-            self.client = client
+        effective_client = client if client is not None else db_client
+        if effective_client is not None:
+            self.client = effective_client
         elif use_mock:
             self.client = MockFirestoreClient()
         else:
