@@ -16,6 +16,7 @@ from src.storage.models import (
     AttendanceEvent,
     LateSubmissionRecord,
     DispatchedAlertRecord,
+    StudentPreferences,
 )
 
 
@@ -335,5 +336,23 @@ class FirestoreStateEngine:
 
         records.sort(key=lambda r: r.dispatched_at or "")
         return records
+
+    def update_student_preferences(
+        self, student_id: str, preferences: StudentPreferences
+    ) -> None:
+        """
+        Update custom StudentPreferences for a student.
+        """
+        state = self.get_student_state(student_id)
+        state.preferences = preferences
+        self.update_student_state(student_id, state)
+
+    def get_student_preferences(self, student_id: str) -> StudentPreferences:
+        """
+        Retrieve custom StudentPreferences for a student, returning default preferences if unconfigured.
+        """
+        state = self.get_student_state(student_id)
+        return state.preferences
+
 
 

@@ -55,6 +55,8 @@ class SundayBatchExecutionLog(BaseModel):
     errors: List[str] = Field(default_factory=list)
 
 
+from src.storage.models import StudentPreferences
+
 def run_batch(
     student_id: str = "default_student",
     canvas_client: Optional[CanvasClient] = None,
@@ -64,6 +66,7 @@ def run_batch(
     now_override: Optional[datetime] = None,
     force_sunday: bool = False,
     assignments_override: Optional[List[Dict[str, Any]]] = None,
+    preferences: Optional[StudentPreferences] = None,
 ) -> Tuple[StudentSnapshot, BatchExecutionResult]:
     """
     Executes sequential ingestion for Canvas LMS and PowerSchool SIS.
@@ -156,7 +159,7 @@ def run_batch(
                     "has_submitted": False,
                 })
 
-        radar_engine = WorkloadRadarEngine()
+        radar_engine = WorkloadRadarEngine(preferences=preferences)
         radar_result = radar_engine.evaluate(radar_assignments, now=now_dt)
 
         # Build course standings

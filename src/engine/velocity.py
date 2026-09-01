@@ -9,11 +9,22 @@ from src.engine.models import (
     PendingGradeDropAlert,
     StudentVelocityContext,
 )
-from src.storage.models import GradeSnapshot
+from src.storage.models import GradeSnapshot, StudentPreferences
 
 
 class GradeVelocityEngine:
     """Evaluates student academic course grade velocity drops and suppresses noisy or un-warmed alerts."""
+
+    def __init__(
+        self,
+        drop_threshold: float = 4.0,
+        preferences: Optional[StudentPreferences] = None,
+    ):
+        if preferences is not None:
+            self.drop_threshold = preferences.velocity_drop_threshold
+        else:
+            self.drop_threshold = drop_threshold
+        self.preferences = preferences
 
     def _parse_date(self, date_val: Union[str, date]) -> date:
         """Helper to convert string or date object to datetime.date."""
@@ -140,8 +151,8 @@ class GradeVelocityEngine:
             curr_percentage = course.current_percentage
             delta = round(prev_percentage - curr_percentage, 2)
 
-            # Check Trigger Threshold (>= 4.0%)
-            if delta >= 4.0:
+            # Check Trigger Threshold
+            if delta >= self.drop_threshold:
                 alert = PendingGradeDropAlert(
                     course_id=course.course_id,
                     course_name=course.course_name,

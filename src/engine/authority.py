@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from typing import Optional, Tuple
 
-from src.storage.models import TrackedAssignment
+from src.storage.models import TrackedAssignment, StudentPreferences
 from src.engine.models import (
     AssignmentStatus,
     AlertSource,
@@ -47,10 +47,15 @@ class AsymmetricAuthorityEngine:
         self,
         grace_period_hours: float = 36.0,
         timezone_str: str = "America/Los_Angeles",
+        preferences: Optional[StudentPreferences] = None,
     ):
-        self.grace_period_hours = grace_period_hours
+        if preferences is not None:
+            self.grace_period_hours = float(preferences.grace_period_hours)
+        else:
+            self.grace_period_hours = grace_period_hours
         self.timezone_str = timezone_str
         self.tz = ZoneInfo(timezone_str)
+        self.preferences = preferences
 
     def calculate_weekday_elapsed_hours(
         self, start_dt: datetime, end_dt: datetime
@@ -76,12 +81,13 @@ class AsymmetricAuthorityEngine:
         total_active_seconds = 0.0
         curr = start_dt
         step = timedelta(minutes=1)
+        weekend_pause = self.preferences.weekend_grace_pause if self.preferences is not None else True
 
         while curr < end_dt:
             nxt = min(curr + step, end_dt)
             duration = (nxt - curr).total_seconds()
             mid = curr + (nxt - curr) / 2
-            if not is_weekend_blackout(mid):
+            if not weekend_pause or not is_weekend_blackout(mid):
                 total_active_seconds += duration
             curr = nxt
 
