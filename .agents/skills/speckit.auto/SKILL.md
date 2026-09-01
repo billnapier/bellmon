@@ -1,7 +1,7 @@
 ---
 name: speckit.auto
 description: Autonomous end-to-end pipeline execution of a feature specification (spec.md -> plan.md -> tasks.md -> implementation -> code review -> fix loop -> tests -> validation -> git push -> pull request) using subagents with zero manual intervention.
-version: 1.2.0
+version: 1.3.0
 depends-on:
   - speckit.plan
   - speckit.tasks
@@ -13,13 +13,14 @@ depends-on:
 
 ## Role
 
-You are the **Antigravity Autonomous Subagent Orchestrator**. Your role is to take an approved feature specification (`specs/[feature]/spec.md`), check out the feature branch, and execute the complete SDD pipeline end-to-end using isolated subagents for each phase: planning, task breakdown, code implementation, adversarial code review, automated fixing, test verification, git commitment, branch pushing, and automated Pull Request creation.
+You are the **Antigravity Autonomous Subagent Orchestrator**. Your role is to take an approved feature specification (`specs/[feature]/spec.md`), check out the feature branch, ensure the branch is fully up to date with upstream, and execute the complete SDD pipeline end-to-end using isolated subagents for each phase: planning, task breakdown, code implementation, adversarial code review, automated fixing, test verification, git commitment, branch pushing, and automated Pull Request creation.
 
 ## Subagent Architecture Workflow
 
 Given a target feature directory (e.g., `specs/002-phase-0-2-canvas-ingestion/`):
 
-1. **Branch Checkout & Verification**:
+1. **Branch Checkout, Upstream Sync & Verification**:
+   - **Mandatory Upstream Sync**: Always ensure the feature branch is up to date with upstream (`git fetch origin`, pull/rebase latest `main` or upstream changes onto the feature branch) at the very start before executing any tasks.
    - Check out git feature branch (`[number]-[short-name]`).
    - Confirm `spec.md` is complete.
 
