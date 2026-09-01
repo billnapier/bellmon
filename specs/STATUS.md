@@ -1,8 +1,8 @@
 # Speckit Status Dashboard
 
-**Generated**: 2026-08-31T23:04:00Z  
+**Generated**: 2026-08-31T23:15:00Z  
 **Total Features**: 13  
-**Overall Completion**: 76.9% (10/13 complete, 3 decomposed / ready for plan)
+**Overall Completion**: 84.6% (11/13 complete, 2 decomposed / ready for plan)
 
 ## Overview
 
@@ -19,8 +19,8 @@
 | `009-phase-1-4-attendance-anomaly-sentinel` | Implement | 100% | 0 | Phase 1.4 complete |
 | `010-phase-1-5-sendgrid-email-notification-router` | Implement | 100% | 0 | Legacy (Replaced by 013) |
 | `011-phase-2-1-workload-clumping-radar` | Implement | 100% | 0 | Phase 2.1 complete |
-| `012-phase-2-2-sunday-planning-digest` | Spec | 0% | 0 | Ready for `/speckit.plan` |
-| `013-phase-2-3-sunday-batch-scheduler-and-pipeline-integration` | Spec | 0% | 0 | Pending Feature 012 |
+| `012-phase-2-2-sunday-planning-digest` | Implement | 100% | 0 | Phase 2.2 complete |
+| `013-phase-2-3-sunday-batch-scheduler-and-pipeline-integration` | Spec | 0% | 0 | Ready for `/speckit.plan` |
 
 ## Feature Details
 
@@ -40,14 +40,14 @@
 
 ### Phase 2: Workload Radar & Sunday Digest (In Progress)
 - **011 Workload Clumping Radar**: Spec 100% | Plan 100% | Tasks 100% (5/5) | Implementation PASS
-- **012 Sunday Evening Weekly Planning Digest**: Spec 100% | Plan 0% | Tasks 0%
+- **012 Sunday Evening Weekly Planning Digest**: Spec 100% | Plan 100% | Tasks 100% (5/5) | Implementation PASS
 - **013 Sunday Batch Scheduler & Pipeline Integration**: Spec 100% | Plan 0% | Tasks 0%
 
 ---
 
 ## Summary
 
-- **Features Fully Implemented & Merged**: 10
-- **Features Decomposed & Ready for Planning**: 3
+- **Features Fully Implemented & Merged**: 11
+- **Features Decomposed & Ready for Planning**: 2
 - **Features Blocked**: 0
-- **Overall Project Completion**: 76.9%
+- **Overall Project Completion**: 84.6%
