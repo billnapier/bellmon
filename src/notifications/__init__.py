@@ -15,12 +15,17 @@ from src.notifications.digest import (
     SundayDigestRouter,
 )
 from src.notifications.heartbeat import HeartbeatBriefingGenerator
+from src.notifications.homework_snapshot import HomeworkSnapshotGenerator
 from src.notifications.models import (
     HeartbeatPayload,
     GraceWatchlistItem,
     PortalIngestionRecord,
     DailyAttendanceSummary,
     AttendancePeriodRecord,
+    HomeworkSnapshotPayload,
+    UpcomingDeadlineItem,
+    GracePeriodSnapshotItem,
+    RecentlyCompletedItem,
 )
 
 __all__ = [
@@ -38,5 +43,11 @@ __all__ = [
     "PortalIngestionRecord",
     "DailyAttendanceSummary",
     "AttendancePeriodRecord",
+    "HomeworkSnapshotGenerator",
+    "HomeworkSnapshotPayload",
+    "UpcomingDeadlineItem",
+    "GracePeriodSnapshotItem",
+    "RecentlyCompletedItem",
 ]
+
 

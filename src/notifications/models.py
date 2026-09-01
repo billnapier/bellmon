@@ -90,3 +90,45 @@ from src.storage.models import HeartbeatDispatchRecord
 # Model Aliases for backward/spec compatibility
 PortalIngestionRecord = IngestionStatusRecord
 DailyAttendanceSummary = AttendanceSummary
+
+
+class UpcomingDeadlineItem(BaseModel):
+    """Upcoming homework or project deadline item within forward-looking window."""
+    assignment_id: str
+    title: str
+    course: str
+    due_at: str
+    portal: str = "Canvas"
+    submitted: bool = False
+    submission_url: Optional[str] = None
+
+
+class GracePeriodSnapshotItem(BaseModel):
+    """Pending grace period item requiring immediate evening submission."""
+    assignment_id: str
+    title: str
+    course: str
+    original_due_at: str
+    hours_remaining: float = 0.0
+    portal: str = "Canvas"
+    submission_url: Optional[str] = None
+
+
+class RecentlyCompletedItem(BaseModel):
+    """Assignment completed/submitted within the past 24 hours."""
+    assignment_id: str
+    title: str
+    course: str
+    submitted_at: str
+    portal: str = "Canvas"
+
+
+class HomeworkSnapshotPayload(BaseModel):
+    """Aggregated daily evening homework and deadline snapshot payload."""
+    generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    student_id: str
+    student_name: str
+    upcoming_deadlines: List[UpcomingDeadlineItem] = Field(default_factory=list)
+    grace_period_items: List[GracePeriodSnapshotItem] = Field(default_factory=list)
+    recently_completed: List[RecentlyCompletedItem] = Field(default_factory=list)
+
