@@ -7,6 +7,7 @@ over a forward 7-day time horizon).
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 from src.radar.models import AssessmentSummary, WorkloadCluster, WorkloadRadarResult
+from src.storage.models import StudentPreferences
 
 DEFAULT_MAJOR_KEYWORDS = [
     "exam", "test", "project", "midterm", "final", "paper", "essay", "presentation", "lab"
@@ -25,11 +26,19 @@ class WorkloadRadarEngine:
         min_points: float = DEFAULT_MIN_POINTS,
         clumping_window_hours: float = CLUMPING_WINDOW_HOURS,
         horizon_days: int = HORIZON_DAYS,
+        clumping_threshold: int = 2,
+        preferences: Optional[StudentPreferences] = None,
     ) -> None:
+        if preferences is not None:
+            self.clumping_window_hours = float(preferences.workload_clumping_window_hours)
+            self.clumping_threshold = preferences.workload_clumping_threshold
+        else:
+            self.clumping_window_hours = clumping_window_hours
+            self.clumping_threshold = clumping_threshold
         self.keywords = [k.lower() for k in (keywords or DEFAULT_MAJOR_KEYWORDS)]
         self.min_points = min_points
-        self.clumping_window_hours = clumping_window_hours
         self.horizon_days = horizon_days
+        self.preferences = preferences
 
     def is_major_assessment(self, assignment: Dict[str, Any]) -> bool:
         """Determines if an assignment is a major assessment via category/title keyword or point value."""
@@ -122,11 +131,11 @@ class WorkloadRadarEngine:
                 if time_diff <= self.clumping_window_hours:
                     current_cluster_items.append(item)
                 else:
-                    if len(current_cluster_items) >= 2:
+                    if len(current_cluster_items) >= self.clumping_threshold:
                         clusters.append(self._build_cluster(current_cluster_items))
                     current_cluster_items = [item]
 
-        if len(current_cluster_items) >= 2:
+        if len(current_cluster_items) >= self.clumping_threshold:
             clusters.append(self._build_cluster(current_cluster_items))
 
         return WorkloadRadarResult(

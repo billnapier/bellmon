@@ -6,7 +6,7 @@ evaluates warning alert triggers, and manages 7-day cooldown deduplication.
 
 from datetime import datetime, timezone, timedelta
 from typing import List, Optional, Tuple, Dict, Any, Union
-from src.storage.models import LateSubmissionRecord, DispatchedAlertRecord
+from src.storage.models import LateSubmissionRecord, DispatchedAlertRecord, StudentPreferences
 from src.engine.models import LateSubmissionPatternAlert
 
 
@@ -26,14 +26,18 @@ def parse_iso(ts_str: Optional[str]) -> Optional[datetime]:
 class LateSubmissionSentinel:
     """Sentinel engine for late submission frequency evaluation and pattern warning alert generation."""
 
+    def __init__(self, preferences: Optional[StudentPreferences] = None):
+        self.preferences = preferences
+
     def evaluate_late_submissions(
         self,
         student_id: str,
         records: List[LateSubmissionRecord],
         now: Optional[datetime] = None,
         min_minutes_late: int = 5,
-        frequency_threshold: int = 3,
+        frequency_threshold: Optional[int] = None,
         dispatched_alerts: Optional[List[Union[DispatchedAlertRecord, Dict[str, Any]]]] = None,
+        preferences: Optional[StudentPreferences] = None,
     ) -> Tuple[Optional[LateSubmissionPatternAlert], List[LateSubmissionRecord]]:
         """
         Evaluate late submission records within a rolling 7-day window.
@@ -77,8 +81,15 @@ class LateSubmissionSentinel:
 
         qualifying_count = len(qualifying_records)
 
+        eff_prefs = preferences or self.preferences
+        target_threshold = (
+            frequency_threshold
+            if frequency_threshold is not None
+            else (eff_prefs.late_submission_threshold if eff_prefs else 3)
+        )
+
         # Check threshold trigger
-        if qualifying_count < frequency_threshold:
+        if qualifying_count < target_threshold:
             return None, qualifying_records
 
         # Check 7-day cooldown against dispatched alerts

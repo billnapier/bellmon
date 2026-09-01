@@ -97,6 +97,16 @@ class DispatchedAlertRecord(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
 
+class StudentPreferences(BaseModel):
+    """Custom notification thresholds and grace periods configured per student/observee."""
+    grace_period_hours: int = Field(default=36, ge=1, le=168, description="Digital missing work grace period in hours")
+    velocity_drop_threshold: float = Field(default=4.0, ge=0.5, le=25.0, description="Grade drop velocity percentage trigger threshold")
+    late_submission_threshold: int = Field(default=3, ge=1, le=20, description="Late submission count warning threshold within 7 days")
+    workload_clumping_threshold: int = Field(default=2, ge=2, le=10, description="Minimum major assessments for workload clumping alert")
+    workload_clumping_window_hours: int = Field(default=48, ge=12, le=168, description="Rolling time window in hours for workload clumping evaluation")
+    weekend_grace_pause: bool = Field(default=True, description="Pause grace period clock during weekend hours")
+
+
 class StudentState(BaseModel):
     """Master document structure stored at students/{student_id} in Firestore."""
     student_id: str
@@ -107,6 +117,8 @@ class StudentState(BaseModel):
     courses: Dict[str, CourseState] = Field(default_factory=dict)
     tracked_assignments: Dict[str, TrackedAssignment] = Field(default_factory=dict)
     attendance_events: List[AttendanceEvent] = Field(default_factory=list)
+    preferences: StudentPreferences = Field(default_factory=StudentPreferences)
+
 
 
 class HeartbeatDispatchRecord(BaseModel):
