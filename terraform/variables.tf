@@ -19,5 +19,5 @@ variable "environment" {
 variable "container_image" {
   type        = string
   description = "Container image URL in GCP Artifact Registry"
-  default     = "us-central1-docker.pkg.dev/bellmon/bellmon-repo/batch-runner:latest"
+  default     = "us-central1-docker.pkg.dev/bellmon/bellmon-repo/sentinel-batch:latest"
 }
