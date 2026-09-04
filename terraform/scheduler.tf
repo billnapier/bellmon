@@ -14,4 +14,8 @@ resource "google_cloud_scheduler_job" "sentinel_batch_schedule" {
       service_account_email = google_service_account.sentinel_runner.email
     }
   }
+
+  depends_on = [
+    google_project_service.cloudscheduler_api
+  ]
 }
